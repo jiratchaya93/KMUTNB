@@ -1,1 +1,636 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Energy Savings Advisor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --rose:     #e8a598;
+      --rose-dk:  #c97b6e;
+      --rose-lt:  #f5d5cc;
+      --cream:    #fdf6f2;
+      --text:     #3a2a25;
+      --muted:    #9c7b74;
+      --glass:    rgba(255,255,255,0.72);
+      --shadow:   0 8px 28px rgba(180,100,80,0.13);
+      --shadow-sm:0 4px 14px rgba(180,100,80,0.09);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.48;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, #f0b8a8, #f5d5cc);
+      top: -100px; right: -80px;
+      animation: drift1 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 340px; height: 340px;
+      background: radial-gradient(circle, #e8cfc8, #f8ebe6);
+      bottom: -80px; left: -60px;
+      animation: drift2 14s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(-20px, 30px) scale(1.05); } }
+    @keyframes drift2 { to { transform: translate(20px, -20px) scale(1.08); } }
+
+    .petal {
+      position: fixed;
+      border-radius: 0 60% 0 60%;
+      background: rgba(232,165,152,0.3);
+      pointer-events: none;
+      animation: fall linear infinite;
+      z-index: 0;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.4; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(0.4); opacity: 0; }
+    }
+
+    /* ── Phone card shell (same as dashboard) ── */
+    .phone {
+      position: relative;
+      z-index: 10;
+      width: 375px;
+      height: 780px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.82);
+      border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(180,100,80,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+      overflow: hidden;
+      animation: rise 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 40px; right: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 4px 4px;
+      z-index: 20;
+      pointer-events: none;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(36px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Header */
+    .header {
+      padding: 22px 24px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      animation: fadein 0.6s 0.1s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .header-left h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .header-left p {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 300;
+      margin-top: 1px;
+    }
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #f2b8a8, #e88070);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(232,128,112,0.3);
+      font-size: 15px;
+    }
+
+    /* Scrollable content */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 108px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .content::-webkit-scrollbar { display: none; }
+
+    /* Section label */
+    .section-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 6px 4px 10px;
+    }
+    .section-label h2 { font-size: 14px; font-weight: 500; color: var(--text); }
+    .section-label .section-sub { font-size: 11px; color: var(--muted); font-weight: 300; margin-left: 4px; }
+    .section-label span.link { font-size: 11px; color: var(--rose-dk); font-weight: 400; }
+
+    /* ── TEMPERATURE CARD ── */
+    .temp-card {
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.82);
+      border-radius: 24px;
+      padding: 16px 16px 14px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      animation: fadein 0.6s 0.2s both;
+    }
+    .temp-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 30px; right: 30px; height: 2.5px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 3px 3px;
+    }
+
+    .temp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .temp-icon-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .temp-icon-bg {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ffca7a, #ff8c42);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(255,140,66,0.3);
+    }
+    .temp-title { font-size: 13px; font-weight: 500; color: var(--text); }
+    .temp-sub   { font-size: 11px; color: var(--muted); font-weight: 300; }
+
+    .temp-peak {
+      text-align: right;
+    }
+    .temp-peak-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: #e07060;
+      line-height: 1;
+    }
+    .temp-peak-label { font-size: 10px; color: var(--muted); font-weight: 300; margin-top: 2px; }
+
+    /* Chart area */
+    .chart-area { position: relative; }
+    .chart-area svg { width: 100%; display: block; }
+
+    /* ── RECOMMENDATIONS ── */
+    .rec-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 4px 12px;
+      animation: fadein 0.6s 0.3s both;
+    }
+    .bulb-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #fde68a, #f59e0b);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+      box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+      animation: glow 2.5s ease-in-out infinite;
+    }
+    @keyframes glow {
+      0%,100% { box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
+      50%      { box-shadow: 0 4px 22px rgba(245,158,11,0.6); }
+    }
+    .rec-header-text h3 {
+      font-size: 14px; font-weight: 500; color: var(--text);
+    }
+    .rec-header-text p {
+      font-size: 11px; color: var(--muted); font-weight: 300;
+    }
+
+    /* Suggestion cards */
+    .suggestion-card {
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(232,165,152,0.18);
+      border-radius: 20px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 10px;
+      animation: fadein 0.6s both;
+      transition: transform 0.18s, box-shadow 0.18s;
+      cursor: pointer;
+    }
+    .suggestion-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(180,90,70,0.14);
+    }
+    .suggestion-card:nth-child(1) { animation-delay: 0.38s; }
+    .suggestion-card:nth-child(2) { animation-delay: 0.46s; }
+
+    .sug-icon {
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .sug-icon::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0.05));
+      border-radius: 14px 14px 60% 60% / 14px 14px 30% 30%;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .sug-icon span { position: relative; z-index: 2; }
+    .sug-icon.ac   { background: linear-gradient(135deg, #dbeafe, #93c5fd); box-shadow: 0 4px 12px rgba(147,197,253,0.4); }
+    .sug-icon.tv   { background: linear-gradient(135deg, #fce7f3, #f9a8d4); box-shadow: 0 4px 12px rgba(249,168,212,0.4); }
+
+    .sug-body { flex: 1; min-width: 0; }
+    .sug-title {
+      font-size: 13px; font-weight: 500; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sug-time {
+      font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 2px;
+    }
+
+    .sug-badge {
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 11px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+    .sug-badge.save {
+      background: rgba(125,206,130,0.14);
+      color: #3a8a40;
+    }
+    .sug-badge.cost {
+      background: rgba(232,165,152,0.18);
+      color: var(--rose-dk);
+    }
+
+    /* ── BOTTOM NAV (same as dashboard) ── */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 24px 22px;
+      background: rgba(253,246,242,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(232,165,152,0.15);
+      z-index: 100;
+      border-radius: 0 0 40px 40px;
+    }
+    .nav-row {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+    }
+    .nav-icon {
+      width: 62px; height: 62px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.62);
+      border: 1px solid rgba(255,255,255,0.88);
+      box-shadow:
+        0 4px 16px rgba(180,90,70,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        inset 0 -1px 0 rgba(200,140,120,0.08);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .nav-icon::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 52%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.10) 100%);
+      border-radius: 18px 18px 60% 60% / 18px 18px 40% 40%;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .nav-icon.active {
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      box-shadow:
+        0 6px 20px rgba(224,112,96,0.38),
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(180,60,40,0.1);
+    }
+    .nav-icon svg { width: 36px; height: 36px; position: relative; z-index: 1; }
+    .nav-item:hover .nav-icon {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 8px 24px rgba(180,90,70,0.16), inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .nav-label { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .nav-item.active .nav-label { color: var(--rose-dk); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Energy Advisor</h1>
+      <p>วันนี้, พุธ 19 มีนาคม 2568</p>
+    </div>
+    <div class="avatar">💡</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Section: Temperature -->
+    <div class="section-label" style="animation: fadein 0.5s 0.15s both;">
+      <div style="display:flex;align-items:baseline;gap:6px;">
+        <h2>กราฟอุณหภูมิ</h2>
+        <span class="section-sub">Temperature Chart</span>
+      </div>
+      <span class="link">วันนี้ ›</span>
+    </div>
+
+    <div class="temp-card">
+      <div class="temp-header">
+        <div class="temp-icon-group">
+          <div class="temp-icon-bg">🌡️</div>
+          <div>
+            <div class="temp-title">อุณหภูมิ (องศา)</div>
+            <div class="temp-sub">09:00 – 16:00 น.</div>
+          </div>
+        </div>
+        <div class="temp-peak">
+          <div class="temp-peak-val">42°C</div>
+          <div class="temp-peak-label">สูงสุดวันนี้</div>
+        </div>
+      </div>
+
+      <!-- Combined Bar + Line Chart -->
+      <div class="chart-area">
+        <svg viewBox="0 0 343 140" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fb923c" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#fdba74" stop-opacity="0.4"/>
+            </linearGradient>
+            <linearGradient id="lineGradT" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#f59e0b"/>
+            </linearGradient>
+            <linearGradient id="areaGradT" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#fbbf24" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Grid lines -->
+          <line x1="30" y1="15"  x2="335" y2="15"  stroke="rgba(180,100,80,0.07)" stroke-width="1"/>
+          <line x1="30" y1="40"  x2="335" y2="40"  stroke="rgba(180,100,80,0.07)" stroke-width="1"/>
+          <line x1="30" y1="65"  x2="335" y2="65"  stroke="rgba(180,100,80,0.07)" stroke-width="1"/>
+          <line x1="30" y1="90"  x2="335" y2="90"  stroke="rgba(180,100,80,0.07)" stroke-width="1"/>
+
+          <!-- Y-axis labels -->
+          <text x="26" y="18"  font-family="DM Sans,sans-serif" font-size="8" fill="rgba(156,123,116,0.7)" text-anchor="end">45°</text>
+          <text x="26" y="43"  font-family="DM Sans,sans-serif" font-size="8" fill="rgba(156,123,116,0.7)" text-anchor="end">35°</text>
+          <text x="26" y="68"  font-family="DM Sans,sans-serif" font-size="8" fill="rgba(156,123,116,0.7)" text-anchor="end">25°</text>
+          <text x="26" y="93"  font-family="DM Sans,sans-serif" font-size="8" fill="rgba(156,123,116,0.7)" text-anchor="end">15°</text>
+
+          <!-- Bars (6 time slots: 09,10,11,12,13,14,15,16 → 6 data points) -->
+          <!-- Data: 30°,25°,36°,30°,39°,42° mapped to y: higher temp = higher bar -->
+          <!-- scale: 15°=90, 45°=15 → y = 90 - (temp-15)*75/30 = 90 - (temp-15)*2.5 -->
+          <!-- 30°→52.5, 25°→65, 36°→40, 30°→52.5, 39°→35, 42°→27.5 -->
+          <!-- bar bottom=90, tops computed above -->
+          <!-- x positions: 6 bars across 30–335, width ~30, gap ~18 -->
+          <!-- centers: 57, 104, 151, 198, 245, 292 -->
+
+          <!-- Bar 1: 30° -->
+          <rect x="42" y="52" width="30" height="38" rx="6" fill="url(#barGrad)"/>
+          <!-- Bar 2: 25° -->
+          <rect x="89" y="65" width="30" height="25" rx="6" fill="url(#barGrad)" opacity="0.75"/>
+          <!-- Bar 3: 36° -->
+          <rect x="136" y="40" width="30" height="50" rx="6" fill="url(#barGrad)"/>
+          <!-- Bar 4: 30° -->
+          <rect x="183" y="52" width="30" height="38" rx="6" fill="url(#barGrad)" opacity="0.85"/>
+          <!-- Bar 5: 39° -->
+          <rect x="230" y="34" width="30" height="56" rx="6" fill="url(#barGrad)"/>
+          <!-- Bar 6: 42° -->
+          <rect x="277" y="27" width="30" height="63" rx="6" fill="url(#barGrad)"/>
+
+          <!-- Area under line -->
+          <path d="M57 52 L104 65 L151 40 L198 52 L245 34 L292 27 L292 90 L57 90 Z" fill="url(#areaGradT)"/>
+
+          <!-- Line chart -->
+          <path d="M57 52 L104 65 L151 40 L198 52 L245 34 L292 27"
+                stroke="url(#lineGradT)" stroke-width="2.2" fill="none"
+                stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Data point dots -->
+          <circle cx="57"  cy="52" r="3.8" fill="#f59e0b" stroke="white" stroke-width="1.5"/>
+          <circle cx="104" cy="65" r="3.8" fill="#f59e0b" stroke="white" stroke-width="1.5"/>
+          <circle cx="151" cy="40" r="3.8" fill="#f59e0b" stroke="white" stroke-width="1.5"/>
+          <circle cx="198" cy="52" r="3.8" fill="#f59e0b" stroke="white" stroke-width="1.5"/>
+          <circle cx="245" cy="34" r="3.8" fill="#f59e0b" stroke="white" stroke-width="1.5"/>
+          <circle cx="292" cy="27" r="5"   fill="#e07060" stroke="white" stroke-width="2"/>
+
+          <!-- Temperature labels above dots -->
+          <text x="57"  y="46" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c2700a" text-anchor="middle" font-weight="500">30°</text>
+          <text x="104" y="59" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c2700a" text-anchor="middle" font-weight="500">25°</text>
+          <text x="151" y="34" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c2700a" text-anchor="middle" font-weight="500">36°</text>
+          <text x="198" y="46" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c2700a" text-anchor="middle" font-weight="500">30°</text>
+          <text x="245" y="28" font-family="DM Sans,sans-serif" font-size="8.5" fill="#c2700a" text-anchor="middle" font-weight="500">39°</text>
+          <text x="292" y="20" font-family="DM Sans,sans-serif" font-size="8.5" fill="#e07060" text-anchor="middle" font-weight="500">42°🔥</text>
+
+          <!-- X-axis labels -->
+          <text x="57"  y="108" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(156,123,116,0.7)" text-anchor="middle">09:00</text>
+          <text x="104" y="108" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(156,123,116,0.7)" text-anchor="middle">10:00</text>
+          <text x="151" y="108" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(156,123,116,0.7)" text-anchor="middle">11:00</text>
+          <text x="198" y="108" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(156,123,116,0.7)" text-anchor="middle">13:00</text>
+          <text x="245" y="108" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(156,123,116,0.7)" text-anchor="middle">14:00</text>
+          <text x="292" y="108" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(156,123,116,0.7)" text-anchor="middle">16:00</text>
+
+          <!-- Legend -->
+          <rect x="30" y="120" width="10" height="8" rx="2" fill="url(#barGrad)"/>
+          <text x="44" y="128" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(156,123,116,0.85)">อุณหภูมิ (bar)</text>
+          <line x1="120" y1="124" x2="136" y2="124" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="128" cy="124" r="2.5" fill="#f59e0b"/>
+          <text x="140" y="128" font-family="DM Sans,sans-serif" font-size="8" fill="rgba(156,123,116,0.85)">แนวโน้ม (line)</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Section: Recommendations -->
+    <div class="rec-header">
+      <div class="bulb-icon">💡</div>
+      <div class="rec-header-text">
+        <h3>คำแนะนำ เพื่อลดค่าไฟ</h3>
+        <p>Energy Saving Recommendations</p>
+      </div>
+    </div>
+
+    <!-- Card 1: AC -->
+    <div class="suggestion-card">
+      <div class="sug-icon ac"><span>❄️</span></div>
+      <div class="sug-body">
+        <div class="sug-title">ปิดแอร์ห้องนอน</div>
+        <div class="sug-time">Turn off Bedroom AC · 11:00 – 14:00</div>
+      </div>
+      <div class="sug-badge save">+ 225 B</div>
+    </div>
+
+    <!-- Card 2: TV -->
+    <div class="suggestion-card">
+      <div class="sug-icon tv"><span>📺</span></div>
+      <div class="sug-body">
+        <div class="sug-title">เปิดโทรทัศน์</div>
+        <div class="sug-time">Turn on TV · 11:00 – 14:00</div>
+      </div>
+      <div class="sug-badge cost">− 156 B</div>
+    </div>
+
+  </div><!-- end content -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-row">
+
+      <!-- Face ID -->
+      <div class="nav-item" onclick="window.location.href='scanner.html'">
+        <div class="nav-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="ng1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+            <path d="M8 17V10H15" stroke="url(#ng1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M33 10H40V17" stroke="url(#ng1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M40 31V38H33" stroke="url(#ng1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 38H8V31" stroke="url(#ng1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        
+      </div>
+
+      <!-- Calendar -->
+      <div class="nav-item" onclick="window.location.href='page1.html'">
+        <div class="nav-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="ng2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+            <rect x="9" y="14" width="30" height="25" rx="4" stroke="url(#ng2)" stroke-width="1.5"/>
+            <rect x="9" y="14" width="30" height="9" rx="4" fill="url(#ng2)" opacity="0.2"/>
+            <line x1="9" y1="23" x2="39" y2="23" stroke="url(#ng2)" stroke-width="1.2" opacity="0.4"/>
+            <path d="M17 10V17" stroke="url(#ng2)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M31 10V17" stroke="url(#ng2)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M24 34.5C24 34.5 19.2 31.2 19.2 28C19.2 26 21 24.8 22.8 25.6C23.4 25.9 23.8 26.3 24 26.8C24.2 26.3 24.6 25.9 25.2 25.6C27 24.8 28.8 26 28.8 28C28.8 31.2 24 34.5 24 34.5Z" fill="url(#ng2)" opacity="0.8"/>
+          </svg>
+        </div>
+        
+      </div>
+
+      <!-- Energy Chart (ACTIVE — this page) -->
+      <div class="nav-item active">
+        <div class="nav-icon active">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs>
+              <linearGradient id="ng3w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0.75)"/></linearGradient>
+              <linearGradient id="ng3fw" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.35)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>
+            </defs>
+            <line x1="11" y1="38" x2="38" y2="38" stroke="url(#ng3w)" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+            <line x1="11" y1="38" x2="11" y2="13" stroke="url(#ng3w)" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+            <path d="M13 31Q17 27 21 22Q25 17.5 29 20Q33 22 36 16L36 38L13 38Z" fill="url(#ng3fw)"/>
+            <path d="M13 31Q17 27 21 22Q25 17.5 29 20Q33 22 36 16" stroke="url(#ng3w)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="13" cy="31" r="2.1" fill="url(#ng3w)"/>
+            <circle cx="21" cy="22" r="2.1" fill="url(#ng3w)"/>
+            <circle cx="29" cy="20" r="2.1" fill="url(#ng3w)"/>
+            <circle cx="36" cy="16" r="2.1" fill="url(#ng3w)"/>
+            <rect x="13.5" y="33" width="4" height="4.5" rx="1.2" fill="url(#ng3w)" opacity="0.6"/>
+            <rect x="21.5" y="31" width="4" height="6.5" rx="1.2" fill="url(#ng3w)" opacity="0.6"/>
+            <rect x="29.5" y="29" width="4" height="8.5" rx="1.2" fill="url(#ng3w)" opacity="0.6"/>
+          </svg>
+        </div>
+        
+      </div>
+
+      <!-- Apps Grid -->
+      <div class="nav-item" onclick="window.location.href='signup.html'">
+        <div class="nav-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="ng4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+            <rect x="10" y="10" width="12.5" height="12.5" rx="3.5" fill="url(#ng4)" opacity="0.85"/>
+            <rect x="25.5" y="10" width="12.5" height="12.5" rx="3.5" stroke="url(#ng4)" stroke-width="1.5" fill="url(#ng4)" fill-opacity="0.15"/>
+            <rect x="10" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ng4)" stroke-width="1.5" fill="url(#ng4)" fill-opacity="0.15"/>
+            <rect x="25.5" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ng4)" stroke-width="1.5" fill="url(#ng4)" fill-opacity="0.28"/>
+          </svg>
+        </div>
+        
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end phone -->
+
+<script>
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const size = 5 + Math.random() * 7;
+    p.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      animation-duration: ${10 + Math.random() * 14}s;
+      animation-delay: ${Math.random() * 10}s;
+      opacity: ${0.15 + Math.random() * 0.3};
+    `;
+    document.body.appendChild(p);
+  }
+</script>
+</body>
+</html>
