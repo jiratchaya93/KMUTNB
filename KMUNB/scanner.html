@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Energy Label Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rose:    #e8a598;
+      --rose-dk: #c97b6e;
+      --cream:   #fdf6f2;
+      --text:    #3a2a25;
+      --muted:   #9c7b74;
+      --glass:   rgba(255,255,255,0.72);
+      --shadow:  0 20px 60px rgba(180,100,80,0.15);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background blobs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    body::before {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, #f0b8a8, #f5d5cc);
+      top: -120px; right: -80px;
+      animation: drift1 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #e8cfc8, #f8ebe6);
+      bottom: -100px; left: -60px;
+      animation: drift2 14s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(-30px, 40px) scale(1.05); } }
+    @keyframes drift2 { to { transform: translate(30px, -30px) scale(1.08); } }
+
+    /* Petals */
+    .petal {
+      position: fixed;
+      border-radius: 0 60% 0 60%;
+      background: rgba(232,165,152,0.35);
+      pointer-events: none;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.5; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(0.4); opacity: 0; }
+    }
+
+    /* Card */
+    .card {
+      position: relative;
+      z-index: 10;
+      background: var(--glass);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.8);
+      border-radius: 32px;
+      padding: 40px 36px 32px;
+      width: 380px;
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,0.9);
+      animation: rise 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(36px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 40px; right: 40px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Logo */
+    .logo-mark {
+      width: 50px; height: 50px;
+      background: linear-gradient(135deg, #f2b8a8, #e88070);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 20px rgba(232,128,112,0.35);
+      animation: pulse 3s ease-in-out infinite;
+      font-size: 22px;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 8px 20px rgba(232,128,112,0.35); }
+      50%      { box-shadow: 0 8px 28px rgba(232,128,112,0.55); }
+    }
+
+    h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text);
+      text-align: center;
+      letter-spacing: 0.01em;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-weight: 300;
+    }
+
+    /* Camera viewport */
+    .camera-wrap {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #1a0e0b;
+      aspect-ratio: 4/3;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(180,100,80,0.18);
+      animation: fadein 0.6s 0.2s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    #video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Scanning overlay frame */
+    .scan-frame {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 78%; height: 42%;
+      pointer-events: none;
+    }
+    .scan-frame::before, .scan-frame::after,
+    .scan-frame .corner-br, .scan-frame .corner-bl {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      border-color: var(--rose);
+      border-style: solid;
+    }
+    .scan-frame::before  { top: 0; left: 0;  border-width: 2.5px 0 0 2.5px; border-radius: 4px 0 0 0; }
+    .scan-frame::after   { top: 0; right: 0; border-width: 2.5px 2.5px 0 0; border-radius: 0 4px 0 0; }
+    .scan-frame .corner-br { bottom: 0; right: 0; border-width: 0 2.5px 2.5px 0; border-radius: 0 0 4px 0; }
+    .scan-frame .corner-bl { bottom: 0; left: 0;  border-width: 0 0 2.5px 2.5px; border-radius: 0 0 0 4px; }
+
+    /* Scanning laser line */
+    .scan-line {
+      position: absolute;
+      left: 11%; right: 11%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      top: 29%;
+      border-radius: 2px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .scan-line.active {
+      animation: laser 1.8s ease-in-out infinite;
+      opacity: 1;
+    }
+    @keyframes laser {
+      0%   { transform: translateY(0);    opacity: 0; }
+      10%  { opacity: 1; }
+      50%  { transform: translateY(calc((var(--frame-h, 120px)) * 0.42)); }
+      90%  { opacity: 1; }
+      100% { transform: translateY(0);    opacity: 0; }
+    }
+
+    /* Camera placeholder when off */
+    .cam-placeholder {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.35);
+      font-size: 13px; font-weight: 300;
+      letter-spacing: 0.04em;
+    }
+    .cam-placeholder .cam-icon { font-size: 36px; opacity: 0.4; }
+
+    /* Status badge */
+    .status-badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+      border-radius: 20px;
+      padding: 4px 11px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #aaa;
+      transition: background 0.3s;
+    }
+    .status-dot.live { background: #7dce82; animation: blink 1.2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* Scan button */
+    .btn-scan {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(224,112,96,0.35);
+      transition: transform 0.18s, box-shadow 0.18s, opacity 0.2s;
+      animation: fadein 0.6s 0.35s cubic-bezier(0.16,1,0.3,1) both;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-scan:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(224,112,96,0.45);
+    }
+    .btn-scan:active:not(:disabled) { transform: translateY(0); }
+    .btn-scan:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: scale(0);
+      animation: ripple-anim 0.55s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple-anim { to { transform: scale(5); opacity: 0; } }
+
+    /* Spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result box */
+    .result-box {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.6);
+      border: 1.5px solid rgba(232,165,152,0.2);
+      border-radius: 18px;
+      padding: 14px 16px;
+      min-height: 72px;
+      animation: fadein 0.6s 0.45s cubic-bezier(0.16,1,0.3,1) both;
+      transition: border-color 0.3s;
+    }
+    .result-box.has-result { border-color: rgba(232,165,152,0.45); }
+
+    .result-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--rose-dk);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .result-label::after {
+      content: '';
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(200,120,110,0.25), transparent);
+    }
+
+    #ocr-text {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-weight: 300;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    #ocr-text.found { color: var(--text); font-weight: 400; }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 3px;
+      background: rgba(232,165,152,0.15);
+      border-radius: 3px;
+      margin-bottom: 8px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #efaa9a, #e07060);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 18px 0 14px;
+      animation: fadein 0.6s 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(180,120,110,0.2), transparent);
+    }
+    .divider span { font-size: 12px; color: var(--muted); font-weight: 300; white-space: nowrap; }
+
+    /* Sign Up link */
+    .signup-row {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      animation: fadein 0.6s 0.6s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .btn-signup-link {
+      display: inline-block;
+      color: white;
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 13px;
+      padding: 8px 22px;
+      border-radius: 20px;
+      margin-left: 8px;
+      box-shadow: 0 4px 14px rgba(224,112,96,0.3);
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .btn-signup-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(224,112,96,0.4);
+    }
+
+    /* Icon row */
+    .icon-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 22px;
+      animation: fadein 0.6s 0.65s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .icon-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      flex: 1;
+    }
+    .icon-glass {
+      width: 62px; height: 62px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.62);
+      border: 1px solid rgba(255,255,255,0.88);
+      box-shadow:
+        0 4px 16px rgba(180,90,70,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        inset 0 -1px 0 rgba(200,140,120,0.08);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    /* Gloss sheen */
+    .icon-glass::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 52%;
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.55) 0%,
+        rgba(255,255,255,0.10) 100%
+      );
+      border-radius: 18px 18px 60% 60% / 18px 18px 40% 40%;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .icon-glass:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow:
+        0 8px 24px rgba(180,90,70,0.16),
+        inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    .icon-glass svg {
+      width: 36px; height: 36px;
+      position: relative; z-index: 1;
+    }
+    .icon-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      text-align: center;
+    }
+
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Logo -->
+  <div class="logo-mark">⚡</div>
+  <h2>Energy Scanner</h2>
+  <p class="subtitle">สแกนฉลากพลังงานด้วยกล้องของคุณ</p>
+
+  <!-- Camera -->
+  <div class="camera-wrap" id="cameraWrap">
+    <video id="video" autoplay playsinline></video>
+
+    <!-- Corner frame -->
+    <div class="scan-frame">
+      <div class="corner-br"></div>
+      <div class="corner-bl"></div>
+    </div>
+
+    <!-- Laser line -->
+    <div class="scan-line" id="scanLine"></div>
+
+    <!-- Placeholder -->
+    <div class="cam-placeholder" id="camPlaceholder">
+      <div class="cam-icon">📷</div>
+      <span>กำลังเปิดกล้อง...</span>
+    </div>
+
+    <!-- Status badge -->
+    <div class="status-badge">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">รอสัญญาณ</span>
+    </div>
+  </div>
+
+  <!-- Scan button -->
+  <button class="btn-scan" id="btnScan" onclick="captureAndScan(event)" disabled>
+    <span class="spinner" id="spinner"></span>
+    <span id="btnLabel">📷 สแกนข้อมูลพลังงาน</span>
+  </button>
+
+  <!-- Result -->
+  <div class="result-box" id="resultBox">
+    <div class="result-label">ผลการสแกน</div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <p id="ocr-text">เล็งกล้องไปที่ตัวเลขบนฉลากพลังงาน แล้วกดปุ่มสแกน</p>
+  </div>
+
+  
+  <!-- Premium Icon Row -->
+  <div class="icon-row">
+
+    <!-- Face ID (active) -->
+    <div class="icon-tile">
+      <div class="icon-glass" style="background: linear-gradient(135deg, #efaa9a, #e07060); border-color: rgba(255,255,255,0.4); box-shadow: 0 6px 20px rgba(224,112,96,0.38), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(180,60,40,0.1);">
+        <svg viewBox="0 0 48 48" fill="none">
+          <defs><linearGradient id="ig1w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0.75)"/></linearGradient></defs>
+          <path d="M8 17V10H15" stroke="url(#ig1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M33 10H40V17" stroke="url(#ig1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M40 31V38H33" stroke="url(#ig1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 38H8V31" stroke="url(#ig1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="icon-label" style="color: var(--rose-dk); font-weight: 500;">Face ID</span>
+    </div>
+
+    <!-- Calendar -->
+    <div class="icon-tile" onclick="window.location.href='page1.html'" style="cursor:pointer;">
+      <div class="icon-glass">
+        <svg viewBox="0 0 48 48" fill="none">
+          <defs><linearGradient id="ig2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+          <rect x="9" y="14" width="30" height="25" rx="4" stroke="url(#ig2)" stroke-width="1.5"/>
+          <rect x="9" y="14" width="30" height="9" rx="4" fill="url(#ig2)" opacity="0.2"/>
+          <line x1="9" y1="23" x2="39" y2="23" stroke="url(#ig2)" stroke-width="1.2" opacity="0.4"/>
+          <path d="M17 10V17" stroke="url(#ig2)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M31 10V17" stroke="url(#ig2)" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M24 34.5C24 34.5 19.2 31.2 19.2 28C19.2 26 21 24.8 22.8 25.6C23.4 25.9 23.8 26.3 24 26.8C24.2 26.3 24.6 25.9 25.2 25.6C27 24.8 28.8 26 28.8 28C28.8 31.2 24 34.5 24 34.5Z" fill="url(#ig2)" opacity="0.8"/>
+        </svg>
+      </div>
+      <span class="icon-label">Calendar</span>
+    </div>
+
+    <!-- Energy Chart -->
+    <div class="icon-tile">
+      <div class="icon-glass">
+        <svg viewBox="0 0 48 48" fill="none">
+          <defs>
+            <linearGradient id="ig3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient>
+            <linearGradient id="ig3f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e88070" stop-opacity="0.3"/><stop offset="100%" stop-color="#e88070" stop-opacity="0"/></linearGradient>
+          </defs>
+          <line x1="11" y1="38" x2="38" y2="38" stroke="url(#ig3)" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+          <line x1="11" y1="38" x2="11" y2="13" stroke="url(#ig3)" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+          <path d="M13 31Q17 27 21 22Q25 17.5 29 20Q33 22 36 16L36 38L13 38Z" fill="url(#ig3f)"/>
+          <path d="M13 31Q17 27 21 22Q25 17.5 29 20Q33 22 36 16" stroke="url(#ig3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="13" cy="31" r="2.1" fill="url(#ig3)"/>
+          <circle cx="21" cy="22" r="2.1" fill="url(#ig3)"/>
+          <circle cx="29" cy="20" r="2.1" fill="url(#ig3)"/>
+          <circle cx="36" cy="16" r="2.1" fill="url(#ig3)"/>
+          <rect x="13.5" y="33" width="4" height="4.5" rx="1.2" fill="url(#ig3)" opacity="0.45"/>
+          <rect x="21.5" y="31" width="4" height="6.5" rx="1.2" fill="url(#ig3)" opacity="0.45"/>
+          <rect x="29.5" y="29" width="4" height="8.5" rx="1.2" fill="url(#ig3)" opacity="0.45"/>
+        </svg>
+      </div>
+      <span class="icon-label">Energy</span>
+    </div>
+
+    <!-- Apps Grid -->
+    <div class="icon-tile">
+      <div class="icon-glass">
+        <svg viewBox="0 0 48 48" fill="none">
+          <defs><linearGradient id="ig4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+          <rect x="10" y="10" width="12.5" height="12.5" rx="3.5" fill="url(#ig4)" opacity="0.85"/>
+          <rect x="25.5" y="10" width="12.5" height="12.5" rx="3.5" stroke="url(#ig4)" stroke-width="1.5" fill="url(#ig4)" fill-opacity="0.15"/>
+          <rect x="10" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ig4)" stroke-width="1.5" fill="url(#ig4)" fill-opacity="0.15"/>
+          <rect x="25.5" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ig4)" stroke-width="1.5" fill="url(#ig4)" fill-opacity="0.28"/>
+        </svg>
+      </div>
+      <span class="icon-label">Apps</span>
+    </div>
+
+  </div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+  // Petals
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const size = 6 + Math.random() * 8;
+    p.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      width: ${size}px; height: ${size}px;
+      animation-duration: ${8 + Math.random() * 14}s;
+      animation-delay: ${Math.random() * 12}s;
+      opacity: ${0.2 + Math.random() * 0.4};
+    `;
+    document.body.appendChild(p);
+  }
+
+  const video      = document.getElementById('video');
+  const canvas     = document.getElementById('canvas');
+  const ocrText    = document.getElementById('ocr-text');
+  const btnScan    = document.getElementById('btnScan');
+  const btnLabel   = document.getElementById('btnLabel');
+  const spinner    = document.getElementById('spinner');
+  const statusDot  = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const scanLine   = document.getElementById('scanLine');
+  const placeholder = document.getElementById('camPlaceholder');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar  = document.getElementById('progressBar');
+  const resultBox    = document.getElementById('resultBox');
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        placeholder.style.display = 'none';
+        statusDot.classList.add('live');
+        statusText.textContent = 'LIVE';
+        btnScan.disabled = false;
+      };
+    } catch (err) {
+      placeholder.querySelector('span').textContent = 'ไม่สามารถเข้าถึงกล้องได้';
+      statusText.textContent = 'ข้อผิดพลาด';
+      console.error(err);
+    }
+  }
+
+  async function captureAndScan(e) {
+    // Ripple
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btnScan.getBoundingClientRect();
+    const sz = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px`;
+    btnScan.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+
+    // UI: scanning state
+    btnScan.disabled = true;
+    spinner.style.display = 'block';
+    btnLabel.textContent = 'กำลังประมวลผล...';
+    scanLine.classList.add('active');
+    ocrText.className = '';
+    ocrText.textContent = 'กำลังอ่านข้อมูล โปรดรอสักครู่...';
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+    resultBox.classList.remove('has-result');
+
+    // Capture
+    const ctx = canvas.getContext('2d');
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    try {
+      const result = await Tesseract.recognize(
+        canvas.toDataURL('image/png'),
+        'eng',
+        {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              progressBar.style.width = Math.round(m.progress * 100) + '%';
+            }
+          }
+        }
+      );
+
+      scanLine.classList.remove('active');
+      progressBar.style.width = '100%';
+      setTimeout(() => { progressWrap.style.display = 'none'; progressBar.style.width = '0%'; }, 600);
+
+      const text = result.data.text.trim();
+      if (text) {
+        ocrText.textContent = text;
+        ocrText.classList.add('found');
+        resultBox.classList.add('has-result');
+      } else {
+        ocrText.textContent = 'ไม่พบข้อความ กรุณาลองอีกครั้ง';
+      }
+    } catch (err) {
+      scanLine.classList.remove('active');
+      progressWrap.style.display = 'none';
+      ocrText.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+      console.error(err);
+    }
+
+    btnScan.disabled = false;
+    spinner.style.display = 'none';
+    btnLabel.textContent = '📷 สแกนข้อมูลพลังงาน';
+  }
+
+  startCamera();
+</script>
+</body>
+</html>
