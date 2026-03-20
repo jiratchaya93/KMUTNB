@@ -1,0 +1,156 @@
+<!-- ══════════════════════════════
+       VIEW 2 : DASHBOARD
+  ══════════════════════════════ -->
+  <div class="view" id="v-dashboard">
+ 
+    <div class="dash-header fi" style="animation-delay:.05s">
+      <div>
+        <h1>Energy Monitor</h1>
+        <p>วันนี้, พุธ 19 มีนาคม 2568</p>
+      </div>
+      <div class="avatar">⚡</div>
+    </div>
+ 
+    <div class="content">
+ 
+      <div class="sec-label fi" style="animation-delay:.1s">
+        <div><h2>ภาพรวมรายวัน</h2><span class="sec-sub">Daily Overview</span></div>
+        <span>วันนี้ ›</span>
+      </div>
+ 
+      <div class="glass-card graph-card fi" style="animation-delay:.14s">
+        <div class="graph-meta">
+          <div class="gm-left">
+            <em>Peak demand</em>
+            <strong id="chartPeakVal">77.5 <span style="font-size:13px;font-family:'DM Sans',sans-serif;font-weight:300;color:var(--muted)">kW</span></strong>
+          </div>
+          <div class="time-tabs">
+            <div class="time-tab" onclick="switchTab(this);switchChartData('6h')">6h</div>
+            <div class="time-tab active" onclick="switchTab(this);switchChartData('24h')">24h</div>
+            <div class="time-tab" onclick="switchTab(this);switchChartData('7d')">7d</div>
+          </div>
+        </div>
+ 
+        <!-- Interactive canvas chart -->
+        <div class="chart-wrap" id="chartWrap" style="position:relative;user-select:none;">
+          <canvas id="energyChart" style="width:100%;display:block;touch-action:none;"></canvas>
+ 
+          <!-- Scrubber tooltip -->
+          <div id="scrubTooltip" style="
+            position:absolute;top:4px;
+            background:linear-gradient(135deg,#efaa9a,#e07060);
+            color:white;font-size:10.5px;font-weight:500;
+            padding:4px 9px;border-radius:12px;white-space:nowrap;
+            box-shadow:0 4px 12px rgba(224,112,96,0.35);
+            pointer-events:none;transform:translateX(-50%);
+            transition:left 0.05s;display:none;">
+            ⚡ 77.5 kW
+          </div>
+        </div>
+ 
+        <div class="info-strip">
+          <div class="info-pill"><div class="ip-label">Max Demand</div><div class="ip-value" id="chartMaxVal">77.5 <em>kW</em></div><div class="ip-sub" id="chartMaxTime">15:00 น.</div></div>
+          <div class="info-pill"><div class="ip-label">Estimated Cost</div><div class="ip-value" id="chartCost">152 <em>บาท</em></div><div class="ip-sub">วันนี้</div></div>
+        </div>
+      </div>
+ 
+      <div class="sec-label fi" style="margin-top:16px;animation-delay:.22s">
+        <div><h2>ภาพรวมรายเดือน</h2><span class="sec-sub">Monthly Overview</span></div>
+        <span id="monthLabel">มีนาคม ›</span>
+      </div>
+ 
+      <!-- Swipeable monthly carousel -->
+      <div class="glass-card monthly-card fi" style="animation-delay:.28s; overflow:hidden; position:relative;">
+        <!-- Carousel track -->
+        <div id="monthTrack" style="display:flex; transition: transform 0.32s cubic-bezier(0.16,1,0.3,1); will-change:transform;">
+        </div>
+        <!-- Dot indicators -->
+        <div id="monthDots" style="display:flex;justify-content:center;gap:5px;margin-top:12px;"></div>
+        <!-- Arrow buttons -->
+        <button onclick="monthNav(-1)" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.7);border:none;border-radius:50%;width:26px;height:26px;font-size:13px;cursor:pointer;color:var(--rose-dk);box-shadow:0 2px 8px rgba(180,100,80,0.15);display:flex;align-items:center;justify-content:center;z-index:5;">‹</button>
+        <button onclick="monthNav(+1)" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.7);border:none;border-radius:50%;width:26px;height:26px;font-size:13px;cursor:pointer;color:var(--rose-dk);box-shadow:0 2px 8px rgba(180,100,80,0.15);display:flex;align-items:center;justify-content:center;z-index:5;">›</button>
+      </div>
+ 
+    </div>
+ 
+    <!-- Nav — Dashboard active -->
+    <div class="bottom-nav">
+      <div class="nav-row">
+ 
+        <!-- Scanner -->
+        <div class="nav-item" onclick="goTo('v-scanner')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="dn1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <path d="M8 17V10H15" stroke="url(#dn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M33 10H40V17" stroke="url(#dn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M40 31V38H33" stroke="url(#dn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 38H8V31" stroke="url(#dn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="nav-label">Scanner</span>
+        </div>
+ 
+        <!-- Dashboard / Calendar+Heart — ACTIVE -->
+        <div class="nav-item" onclick="goTo('v-dashboard')">
+          <div class="nav-icon active-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="dn2w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0.70)"/></linearGradient></defs>
+              <!-- Calendar body -->
+              <rect x="9" y="13" width="30" height="26" rx="4.5" stroke="url(#dn2w)" stroke-width="1.6"/>
+              <!-- Header band -->
+              <rect x="9" y="13" width="30" height="10" rx="4.5" fill="url(#dn2w)" opacity=".28"/>
+              <line x1="9" y1="23" x2="39" y2="23" stroke="url(#dn2w)" stroke-width="1.1" opacity=".5"/>
+              <!-- Pins -->
+              <path d="M17 9V15" stroke="url(#dn2w)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M31 9V15" stroke="url(#dn2w)" stroke-width="2.2" stroke-linecap="round"/>
+              <!-- Heart -->
+              <path d="M24 35C24 35 18.5 31.2 18.5 27.5C18.5 25.3 20.5 24 22.5 25C23.1 25.3 23.7 25.8 24 26.4C24.3 25.8 24.9 25.3 25.5 25C27.5 24 29.5 25.3 29.5 27.5C29.5 31.2 24 35 24 35Z" fill="url(#dn2w)"/>
+            </svg>
+          </div>
+          <span class="nav-label active-label">Dashboard</span>
+        </div>
+ 
+        <!-- Energy Chart -->
+        <div class="nav-item" onclick="goTo('v-advisor')" style="cursor:pointer">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs>
+              <linearGradient id="dn3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient>
+              <linearGradient id="dn3f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e88070" stop-opacity=".32"/><stop offset="100%" stop-color="#e88070" stop-opacity="0"/></linearGradient>
+            </defs>
+              <!-- Axes -->
+              <line x1="11" y1="37" x2="38" y2="37" stroke="url(#dn3)" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
+              <line x1="11" y1="37" x2="11" y2="12" stroke="url(#dn3)" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
+              <!-- Area fill -->
+              <path d="M13 30Q17 26 21 21Q25 16.5 29 19Q33 21.5 36 15L36 37L13 37Z" fill="url(#dn3f)"/>
+              <!-- Line -->
+              <path d="M13 30Q17 26 21 21Q25 16.5 29 19Q33 21.5 36 15" stroke="url(#dn3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Dots -->
+              <circle cx="13" cy="30" r="2.2" fill="url(#dn3)"/>
+              <circle cx="21" cy="21" r="2.2" fill="url(#dn3)"/>
+              <circle cx="29" cy="19" r="2.2" fill="url(#dn3)"/>
+              <circle cx="36" cy="15" r="2.2" fill="url(#dn3)"/>
+              <!-- Mini bars -->
+              <rect x="14" y="32" width="3.5" height="4.5" rx="1" fill="url(#dn3)" opacity=".4"/>
+              <rect x="21.5" y="30" width="3.5" height="6.5" rx="1" fill="url(#dn3)" opacity=".4"/>
+              <rect x="29" y="28" width="3.5" height="8.5" rx="1" fill="url(#dn3)" opacity=".4"/>
+            </svg>
+          </div>
+          <span class="nav-label">Energy</span>
+        </div>
+ 
+        <!-- Apps -->
+        <div class="nav-item" onclick="goTo('v-apps')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="dn4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <rect x="10" y="10" width="12" height="12" rx="3.5" fill="url(#dn4)" opacity=".9"/>
+              <rect x="26" y="10" width="12" height="12" rx="3.5" stroke="url(#dn4)" stroke-width="1.6" fill="url(#dn4)" fill-opacity=".18"/>
+              <rect x="10" y="26" width="12" height="12" rx="3.5" stroke="url(#dn4)" stroke-width="1.6" fill="url(#dn4)" fill-opacity=".18"/>
+              <rect x="26" y="26" width="12" height="12" rx="3.5" stroke="url(#dn4)" stroke-width="1.6" fill="url(#dn4)" fill-opacity=".32"/>
+            </svg>
+          </div>
+          <span class="nav-label">Apps</span>
+        </div>
+ 
+      </div>
+    </div>
+ 
+  </div><!-- end v-dashboard -->
