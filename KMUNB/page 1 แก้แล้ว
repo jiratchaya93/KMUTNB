@@ -1,6 +1,214 @@
-<!-- ══════════════════════════════
-       VIEW 2 : DASHBOARD
-  ══════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Energy Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rose: #e8a598; --rose-dk: #c97b6e; --rose-lt: #f5d5cc;
+      --cream: #fdf6f2; --text: #3a2a25; --muted: #9c7b74;
+      --glass: rgba(255,255,255,0.72);
+      --shadow: 0 8px 28px rgba(180,100,80,0.13);
+      --shadow-sm: 0 4px 14px rgba(180,100,80,0.09);
+    }
+    html, body {
+      height: 100%; font-family: "DM Sans", sans-serif;
+      background: var(--cream);
+      display: flex; justify-content: center; align-items: center;
+      overflow: hidden;
+    }
+    body::before, body::after {
+      content: ""; position: fixed; border-radius: 50%;
+      filter: blur(80px); opacity: 0.48; pointer-events: none; z-index: 0;
+    }
+    body::before {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, #f0b8a8, #f5d5cc);
+      top: -120px; right: -80px;
+      animation: drift1 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #e8cfc8, #f8ebe6);
+      bottom: -100px; left: -60px;
+      animation: drift2 14s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(-30px,40px) scale(1.05); } }
+    @keyframes drift2 { to { transform: translate(30px,-30px) scale(1.08); } }
+    .petal {
+      position: fixed; border-radius: 0 60% 0 60%;
+      background: rgba(232,165,152,0.32); pointer-events: none;
+      animation: fall linear infinite; z-index: 0;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 0; }
+      10%  { opacity: 1; } 90% { opacity: 0.45; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(0.4); opacity: 0; }
+    }
+    .phone {
+      position: relative; z-index: 10;
+      width: 375px; height: 780px;
+      display: flex; flex-direction: column;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.82); border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(180,100,80,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+      overflow: hidden;
+      animation: rise 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(36px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .phone::before {
+      content: ""; position: absolute; top: 0; left: 40px; right: 40px; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 4px 4px; z-index: 20; pointer-events: none;
+    }
+    @keyframes fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .fi { animation: fadein 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #f2b8a8, #e88070);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(232,128,112,0.3); font-size: 15px;
+    }
+    .bottom-nav {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 10px 20px 18px;
+      background: rgba(253,246,242,0.9); backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(232,165,152,0.14); z-index: 100; border-radius: 0 0 40px 40px;
+    }
+    .nav-row { display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+    .nav-icon {
+      width: 58px; height: 58px; border-radius: 16px;
+      background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.88);
+      box-shadow: 0 4px 16px rgba(180,90,70,0.10), inset 0 1px 0 rgba(255,255,255,0.95);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .nav-icon::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 52%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0.08));
+      border-radius: 16px 16px 60% 60% / 16px 16px 40% 40%;
+      pointer-events: none; z-index: 2;
+    }
+    .nav-icon.active-icon {
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      box-shadow: 0 6px 20px rgba(224,112,96,0.38), inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    .nav-icon svg { width: 32px; height: 32px; position: relative; z-index: 1; }
+    .nav-item:hover .nav-icon { transform: translateY(-3px) scale(1.04); }
+    .nav-label { font-size: 10.5px; color: var(--muted); font-weight: 400; }
+    .nav-label.active-label { color: var(--rose-dk); font-weight: 500; }
+    .dash-header {
+      padding: 18px 22px 12px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .dash-header h1 {
+      font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400;
+      color: var(--text); letter-spacing: 0.01em;
+    }
+    .dash-header p { font-size: 12px; color: var(--muted); font-weight: 300; margin-top: 1px; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #f2b8a8, #e88070);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(232,128,112,0.3); font-size: 15px;
+    }
+ 
+    .content {
+      flex: 1; overflow-y: auto; padding: 0 14px 100px;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .content::-webkit-scrollbar { display: none; }
+ 
+    .sec-label {
+      display: flex; justify-content: space-between; align-items: baseline; margin: 6px 4px 8px;
+    }
+    .sec-label h2 { font-size: 15px; font-weight: 500; color: var(--text); }
+    .sec-label > span { font-size: 11px; color: var(--rose-dk); }
+    .sec-sub { font-size: 11px; color: var(--muted); font-weight: 300; margin-left: 4px; }
+ 
+    .glass-card {
+      background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.82); border-radius: 22px;
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .glass-card::before {
+      content: ''; position: absolute; top: 0; left: 28px; right: 28px; height: 2.5px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 3px 3px;
+    }
+    .graph-card { padding: 16px 14px 12px; }
+    .monthly-card { padding: 18px 16px; margin-top: 12px; }
+ 
+    .graph-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .gm-left em { font-style: normal; font-size: 12px; color: var(--muted); display: block; }
+    .gm-left strong {
+      font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400;
+      color: var(--text); line-height: 1.1;
+    }
+    .time-tabs { display: flex; gap: 4px; }
+    .time-tab {
+      padding: 4px 10px; border-radius: 12px; font-size: 11px;
+      color: var(--muted); cursor: pointer; transition: all 0.2s;
+    }
+    .time-tab.active {
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      color: white; box-shadow: 0 3px 10px rgba(224,112,96,0.28);
+    }
+ 
+    .chart-wrap { position: relative; }
+    .chart-wrap svg { width: 100%; display: block; }
+    .peak-bubble {
+      position: absolute; top: 4px;
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      color: white; font-size: 10px; font-weight: 500;
+      padding: 3px 9px; border-radius: 12px; white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(224,112,96,0.32); pointer-events: none;
+    }
+    .peak-bubble::after {
+      content: ''; position: absolute; bottom: -5px; left: 50%;
+      transform: translateX(-50%); border: 5px solid transparent;
+      border-top-color: #e07060; border-bottom: none;
+    }
+ 
+    .info-strip { display: flex; gap: 8px; margin-top: 10px; }
+    .info-pill {
+      flex: 1; background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(232,165,152,0.18); border-radius: 14px;
+      padding: 10px 12px; box-shadow: var(--shadow-sm);
+    }
+    .ip-label { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+    .ip-value { font-size: 14px; font-weight: 500; color: var(--text); }
+    .ip-value em { font-style: normal; font-size: 10px; color: var(--muted); font-weight: 300; margin-left: 2px; }
+    .ip-sub { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+ 
+    .m-cols { display: flex; gap: 10px; margin-top: 4px; }
+    .m-col {
+      flex: 1; background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(232,165,152,0.16); border-radius: 16px; padding: 14px 12px;
+    }
+    .m-col-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .m-col-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 400; color: var(--text); line-height: 1; }
+    .m-col-unit { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 3px; }
+    .m-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: rgba(220,80,70,0.10); color: #c0443a;
+      font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 10px; margin-top: 7px;
+    }
+    .mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 32px; margin-top: 10px; }
+    .mini-bar { flex: 1; border-radius: 3px 3px 2px 2px; background: linear-gradient(to top, #efaa9a, #f5c8bc); opacity: 0.5; }
+    .mini-bar.active { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="petals"></div>
+<div class="phone">
   <div class="view" id="v-dashboard">
  
     <div class="dash-header fi" style="animation-delay:.05s">
@@ -154,3 +362,307 @@
     </div>
  
   </div><!-- end v-dashboard -->
+</div>
+<script>
+// Petals
+(function(){
+  const wrap = document.getElementById('petals');
+  for(let i=0;i<12;i++){
+    const p=document.createElement('div'); p.className='petal';
+    const s=5+Math.random()*8;
+    p.style.cssText=`left:${Math.random()*100}vw;width:${s}px;height:${s}px;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*12}s;opacity:${0.15+Math.random()*0.35}`;
+    wrap.appendChild(p);
+  }
+})();
+ 
+function goTo(id) {
+  // re-draw on enter
+  if (id === 'v-dashboard') {
+    setTimeout(() => { drawChart(activeDataKey,-1); initChartEvents(); renderMonthCarousel(); }, 50);
+  }
+}
+ 
+function switchTab(el) {
+  el.closest('.time-tabs').querySelectorAll('.time-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+// ── Interactive Energy Chart ─────────────────────────────
+const CHART_DATA = {
+  '6h':  { labels:['12:00','13:00','14:00','15:00','16:00','17:00'], values:[48,55,62,77.5,71,58], unit:'kW', cost:92 },
+  '24h': { labels:['00:00','03:00','06:00','09:00','12:00','15:00','18:00','21:00','24:00'],
+           values:[28,22,18,35,52,77.5,65,48,42], unit:'kW', cost:152 },
+  '7d':  { labels:['จ','อ','พ','พฤ','ศ','ส','อา'], values:[210,195,240,185,265,310,180], unit:'kW/d', cost:1064 }
+};
+let activeDataKey = '24h';
+let scrubIdx = -1;
+ 
+function getChartCanvas() { return document.getElementById('energyChart'); }
+ 
+function drawChart(key, scrub) {
+  const canvas = getChartCanvas();
+  if (!canvas) return;
+  const wrap = document.getElementById('chartWrap');
+  const W = wrap.clientWidth;
+  const H = 115;
+  canvas.width  = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+ 
+  const data   = CHART_DATA[key];
+  const vals   = data.values;
+  const labels = data.labels;
+  const pad = { l:26, r:10, t:12, b:22 };
+  const cw = W - pad.l - pad.r;
+  const ch = H - pad.t - pad.b;
+  const maxV = Math.max(...vals);
+  const minV = 0;
+  const range = maxV - minV || 1;
+  const n = vals.length;
+ 
+  const px = i => pad.l + (i / (n-1)) * cw;
+  const py = v => pad.t + ch - ((v - minV) / range) * ch;
+ 
+  // Grid lines + Y labels
+  ctx.font = `${8 * window.devicePixelRatio / window.devicePixelRatio}px DM Sans`;
+  ctx.fillStyle = 'rgba(156,123,116,0.6)';
+  ctx.textAlign = 'right';
+  [0.25, 0.5, 0.75, 1.0].forEach(frac => {
+    const v   = minV + range * frac;
+    const y   = py(v);
+    ctx.strokeStyle = 'rgba(180,100,80,0.07)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillText(Math.round(v), pad.l - 3, y + 3);
+  });
+ 
+  // Area fill (gradient)
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+  grad.addColorStop(0,   'rgba(232,165,152,0.42)');
+  grad.addColorStop(1,   'rgba(232,165,152,0.02)');
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(vals[0]));
+  for (let i = 1; i < n; i++) {
+    const xm = (px(i-1) + px(i)) / 2;
+    ctx.bezierCurveTo(xm, py(vals[i-1]), xm, py(vals[i]), px(i), py(vals[i]));
+  }
+  ctx.lineTo(px(n-1), pad.t + ch);
+  ctx.lineTo(px(0),   pad.t + ch);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+ 
+  // Line stroke (gradient left→right)
+  const lineGrad = ctx.createLinearGradient(pad.l, 0, W - pad.r, 0);
+  lineGrad.addColorStop(0, '#f5c0b0');
+  lineGrad.addColorStop(1, '#d4685a');
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(vals[0]));
+  for (let i = 1; i < n; i++) {
+    const xm = (px(i-1) + px(i)) / 2;
+    ctx.bezierCurveTo(xm, py(vals[i-1]), xm, py(vals[i]), px(i), py(vals[i]));
+  }
+  ctx.strokeStyle = lineGrad;
+  ctx.lineWidth   = 2.2;
+  ctx.lineJoin    = 'round';
+  ctx.lineCap     = 'round';
+  ctx.stroke();
+ 
+  // X labels
+  ctx.fillStyle = 'rgba(156,123,116,0.7)';
+  ctx.textAlign = 'center';
+  ctx.font = '8.5px DM Sans';
+  labels.forEach((lbl, i) => {
+    const xi = Math.round(i / (labels.length - 1) * (n - 1));
+    if (xi < n) ctx.fillText(lbl, px(xi), H - 4);
+  });
+ 
+  // Peak dot (always show max)
+  const peakIdx = vals.indexOf(maxV);
+  ctx.beginPath();
+  ctx.arc(px(peakIdx), py(maxV), 7, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(224,112,96,0.18)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(px(peakIdx), py(maxV), 4.5, 0, Math.PI*2);
+  ctx.fillStyle = '#e07060';
+  ctx.fill();
+ 
+  // Scrubber line + dot
+  if (scrub >= 0 && scrub < n) {
+    const sx = px(scrub), sy = py(vals[scrub]);
+    // vertical line
+    ctx.strokeStyle = 'rgba(224,112,96,0.45)';
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(sx, pad.t); ctx.lineTo(sx, pad.t + ch); ctx.stroke();
+    ctx.setLineDash([]);
+    // dot ring
+    ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(224,112,96,0.2)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, 4.5, 0, Math.PI*2);
+    ctx.fillStyle = '#e07060'; ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = 'white'; ctx.fill();
+ 
+    // update tooltip
+    const tooltip = document.getElementById('scrubTooltip');
+    const pct = sx / W * 100;
+    tooltip.style.left  = pct + '%';
+    tooltip.style.display = 'block';
+    tooltip.textContent = '⚡ ' + vals[scrub] + ' ' + data.unit;
+  } else {
+    const tooltip = document.getElementById('scrubTooltip');
+    if (tooltip) tooltip.style.display = 'none';
+  }
+}
+ 
+function posToIdx(clientX, canvas) {
+  const rect  = canvas.getBoundingClientRect();
+  const x     = clientX - rect.left;
+  const data  = CHART_DATA[activeDataKey];
+  const n     = data.values.length;
+  const W     = rect.width;
+  const pad_l = 26, pad_r = 10;
+  const cw    = W - pad_l - pad_r;
+  const frac  = (x - pad_l) / cw;
+  return Math.max(0, Math.min(n-1, Math.round(frac * (n-1))));
+}
+ 
+function initChartEvents() {
+  const canvas = getChartCanvas();
+  if (!canvas) return;
+ 
+  const onMove = (clientX) => {
+    scrubIdx = posToIdx(clientX, canvas);
+    drawChart(activeDataKey, scrubIdx);
+    const v = CHART_DATA[activeDataKey].values[scrubIdx];
+    const u = CHART_DATA[activeDataKey].unit;
+    document.getElementById('chartPeakVal').innerHTML =
+      `${v} <span style="font-size:13px;font-family:'DM Sans',sans-serif;font-weight:300;color:var(--muted)">${u}</span>`;
+  };
+  const onEnd = () => {
+    scrubIdx = -1;
+    drawChart(activeDataKey, -1);
+    const peak = Math.max(...CHART_DATA[activeDataKey].values);
+    document.getElementById('chartPeakVal').innerHTML =
+      `${peak} <span style="font-size:13px;font-family:'DM Sans',sans-serif;font-weight:300;color:var(--muted)">${CHART_DATA[activeDataKey].unit}</span>`;
+  };
+ 
+  canvas.addEventListener('touchstart',  e => { e.preventDefault(); onMove(e.touches[0].clientX); }, {passive:false});
+  canvas.addEventListener('touchmove',   e => { e.preventDefault(); onMove(e.touches[0].clientX); }, {passive:false});
+  canvas.addEventListener('touchend',    () => onEnd());
+  canvas.addEventListener('mousedown',   e => onMove(e.clientX));
+  canvas.addEventListener('mousemove',   e => { if (e.buttons) onMove(e.clientX); });
+  canvas.addEventListener('mouseleave',  () => onEnd());
+  canvas.addEventListener('mouseup',     () => onEnd());
+}
+ 
+function switchChartData(key) {
+  activeDataKey = key;
+  scrubIdx = -1;
+  const data = CHART_DATA[key];
+  const peak = Math.max(...data.values);
+  const peakIdx = data.values.indexOf(peak);
+  document.getElementById('chartPeakVal').innerHTML =
+    `${peak} <span style="font-size:13px;font-family:'DM Sans',sans-serif;font-weight:300;color:var(--muted)">${data.unit}</span>`;
+  document.getElementById('chartMaxVal').innerHTML  = `${peak} <em>${data.unit}</em>`;
+  document.getElementById('chartMaxTime').textContent = data.labels[Math.round(peakIdx/(data.values.length-1)*(data.labels.length-1))] + ' น.';
+  document.getElementById('chartCost').innerHTML    = `${data.cost} <em>บาท</em>`;
+  drawChart(key, -1);
+}
+ 
+// Init chart after DOM ready
+setTimeout(() => {
+  drawChart(activeDataKey, -1);
+  initChartEvents();
+  renderMonthCarousel();
+  window.addEventListener('resize', () => drawChart(activeDataKey, scrubIdx));
+}, 300);
+ 
+// ── Monthly Carousel ────────────────────────────────────
+const MONTHS = [
+  { name:'ตุลาคม',  units:1180, cost:1820, bars:[38,42,50,45,52,48,44], change:null,   pct:null  },
+  { name:'พฤศจิกายน', units:1240, cost:1910, bars:[42,48,44,55,50,52,46], change:'up',  pct:5   },
+  { name:'ธันวาคม',  units:1390, cost:2080, bars:[44,50,58,62,55,60,52], change:'up',  pct:9   },
+  { name:'มกราคม',  units:1450, cost:2190, bars:[50,55,62,58,65,60,56], change:'up',  pct:5   },
+  { name:'กุมภาพันธ์', units:1320, cost:1990, bars:[55,48,52,50,45,58,44], change:'dn', pct:9   },
+  { name:'มีนาคม',  units:1562, cost:2154, bars:[40,55,48,65,72,85,60], change:'up',  pct:10  },
+];
+ 
+let mIdx = 5; // start at มีนาคม
+ 
+function buildMonthCard(d) {
+  const badgeHtml = d.change
+    ? `<div class="m-badge" style="background:${d.change==='up'?'rgba(220,80,70,0.10)':'rgba(80,180,80,0.10)'};color:${d.change==='up'?'#c0443a':'#3a8a40'}">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="${d.change==='up'?'M5 8V2M2 5l3-3 3 3':'M5 2v6M2 5l3 3 3-3'}" stroke="${d.change==='up'?'#c0443a':'#3a8a40'}" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        ${d.change==='up'?'↑':'↓'} ${d.pct}%
+      </div>`
+    : `<div class="m-badge" style="background:rgba(180,180,180,0.1);color:#aaa">— เริ่มต้น</div>`;
+ 
+  const barsHtml = d.bars.map((h,i) =>
+    `<div class="mini-bar ${i===d.bars.length-2?'active':''}" style="height:${h}%;${i===d.bars.length-1?'opacity:.22':''}"></div>`
+  ).join('');
+ 
+  return `<div style="min-width:100%;padding:0 28px;box-sizing:border-box;">
+    <div class="m-cols">
+      <div class="m-col">
+        <div class="m-col-lbl">Predicted Units</div>
+        <div class="m-col-val">${d.units.toLocaleString('th-TH')}</div>
+        <div class="m-col-unit">kWh คาดการณ์</div>
+        <div class="mini-bars">${barsHtml}</div>
+      </div>
+      <div class="m-col">
+        <div class="m-col-lbl">Average Total</div>
+        <div class="m-col-val">${d.cost.toLocaleString('th-TH')}</div>
+        <div class="m-col-unit">บาท / เดือน</div>
+        ${badgeHtml}
+      </div>
+    </div>
+  </div>`;
+}
+ 
+function renderMonthCarousel() {
+  const track = document.getElementById('monthTrack');
+  const dots  = document.getElementById('monthDots');
+  if (!track || !dots) return;
+ 
+  track.innerHTML = MONTHS.map(d => buildMonthCard(d)).join('');
+  track.style.transform = `translateX(-${mIdx*100}%)`;
+ 
+  dots.innerHTML = MONTHS.map((_,i) =>
+    `<div onclick="jumpMonth(${i})" style="width:${i===mIdx?'18':'6'}px;height:6px;border-radius:3px;
+      background:${i===mIdx?'var(--rose-dk)':'rgba(200,140,120,0.3)'};
+      transition:all 0.25s;cursor:pointer;"></div>`
+  ).join('');
+ 
+  document.getElementById('monthLabel').textContent = MONTHS[mIdx].name + ' ›';
+}
+ 
+function monthNav(dir) {
+  mIdx = Math.max(0, Math.min(MONTHS.length-1, mIdx+dir));
+  renderMonthCarousel();
+}
+function jumpMonth(i) { mIdx = i; renderMonthCarousel(); }
+ 
+// Touch swipe support
+(function(){
+  let sx=0;
+  document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('monthTrack');
+    if (!track) return;
+    track.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, {passive:true});
+    track.addEventListener('touchend',   e => {
+      const dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 40) monthNav(dx < 0 ? 1 : -1);
+    }, {passive:true});
+  });
+})();
+ 
+</script>
+</body>
+</html>
