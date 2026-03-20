@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Scan Result</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rose:     #e8a598;
+      --rose-dk:  #c97b6e;
+      --cream:    #fdf6f2;
+      --text:     #3a2a25;
+      --muted:    #9c7b74;
+      --glass:    rgba(255,255,255,0.72);
+      --shadow:   0 8px 28px rgba(180,100,80,0.13);
+      --shadow-sm:0 4px 14px rgba(180,100,80,0.09);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.48;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::before {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, #f0b8a8, #f5d5cc);
+      top: -100px; right: -80px;
+      animation: drift1 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 340px; height: 340px;
+      background: radial-gradient(circle, #e8cfc8, #f8ebe6);
+      bottom: -80px; left: -60px;
+      animation: drift2 14s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(-20px, 30px) scale(1.05); } }
+    @keyframes drift2 { to { transform: translate(20px, -20px) scale(1.08); } }
+
+    .petal {
+      position: fixed;
+      border-radius: 0 60% 0 60%;
+      background: rgba(232,165,152,0.3);
+      pointer-events: none;
+      animation: fall linear infinite;
+      z-index: 0;
+    }
+    @keyframes fall {
+      0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 0; }
+      10%  { opacity: 1; } 90% { opacity: 0.4; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(0.4); opacity: 0; }
+    }
+
+    /* Phone card shell */
+    .phone {
+      position: relative;
+      z-index: 10;
+      width: 375px;
+      height: 780px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.82);
+      border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(180,100,80,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+      overflow: hidden;
+      animation: rise 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .phone::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 40px; right: 40px; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 4px 4px;
+      z-index: 20; pointer-events: none;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(36px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .header {
+      padding: 20px 24px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      animation: fadein 0.6s 0.1s both;
+    }
+    .header-left h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 21px; font-weight: 400;
+      color: var(--text); letter-spacing: 0.01em;
+    }
+    .header-left p { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 1px; }
+    .back-btn {
+      width: 34px; height: 34px; border-radius: 11px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(232,165,152,0.25);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 15px;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.18s;
+    }
+    .back-btn:hover { transform: translateY(-1px); }
+
+    /* Scrollable content */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 14px 108px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .content::-webkit-scrollbar { display: none; }
+
+    /* ── SCAN VIEWPORT ── */
+    .scan-section { animation: fadein 0.6s 0.15s both; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(125,206,130,0.15);
+      border: 1px solid rgba(125,206,130,0.3);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #3a8a40;
+      margin-bottom: 8px;
+    }
+    .status-dot-green {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #4ade80;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    
+
+    
+
+    
+
+    /* ── LABEL DATA CARD ── */
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.82);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 30px; right: 30px; height: 2.5px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 3px 3px;
+    }
+
+    .card-title {
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 0.08em; color: var(--rose-dk);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .card-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(200,120,110,0.25), transparent);
+    }
+
+    /* Device info row */
+    .device-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .device-icon-box {
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #dbeafe, #93c5fd);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(147,197,253,0.35);
+      position: relative; overflow: hidden;
+    }
+    .device-icon-box::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0.05));
+      border-radius: 14px 14px 60% 60% / 14px 14px 30% 30%;
+    }
+    .device-specs { flex: 1; }
+    .device-model { font-size: 14px; font-weight: 500; color: var(--text); }
+    .device-detail { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 2px; line-height: 1.5; }
+
+    /* Stars */
+    .stars-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .star {
+      font-size: 20px;
+      filter: drop-shadow(0 2px 6px rgba(251,191,36,0.5));
+      animation: star-glow 2s ease-in-out infinite;
+    }
+    .star:nth-child(2) { animation-delay: 0.1s; }
+    .star:nth-child(3) { animation-delay: 0.2s; }
+    .star:nth-child(4) { animation-delay: 0.3s; }
+    .star:nth-child(5) { animation-delay: 0.4s; }
+    @keyframes star-glow {
+      0%,100% { filter: drop-shadow(0 2px 6px rgba(251,191,36,0.5)); }
+      50%      { filter: drop-shadow(0 2px 12px rgba(251,191,36,0.9)); }
+    }
+    .stars-label { font-size: 11px; color: var(--muted); font-weight: 300; margin-left: 4px; }
+
+    /* Official cost */
+    .cost-official {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(232,165,152,0.18);
+      border-radius: 14px;
+    }
+    .cost-official-val {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px; font-weight: 400;
+      color: var(--text); line-height: 1;
+    }
+    .cost-official-unit { font-size: 12px; color: var(--muted); font-weight: 300; }
+    .cost-official-label { font-size: 10px; color: var(--muted); font-weight: 400;
+      letter-spacing: 0.05em; text-transform: uppercase; margin-left: auto; }
+
+    /* ── AI ANALYSIS CARD ── */
+    .ai-card {
+      animation: fadein 0.6s 0.4s both;
+    }
+
+    .ai-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .ai-icon {
+      width: 30px; height: 30px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #e879f9, #a855f7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(168,85,247,0.3);
+    }
+    .ai-title { font-size: 13px; font-weight: 500; color: var(--text); }
+    .ai-sub   { font-size: 10.5px; color: var(--muted); font-weight: 300; }
+
+    /* Insight rows */
+    .insight-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(232,165,152,0.14);
+      border-radius: 14px;
+      margin-bottom: 8px;
+    }
+    .insight-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .insight-body { flex: 1; }
+    .insight-main { font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.4; }
+    .insight-sub  { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 2px; line-height: 1.4; }
+    .insight-val  {
+      font-size: 13px; font-weight: 500;
+      color: var(--rose-dk);
+      white-space: nowrap; flex-shrink: 0;
+      align-self: center;
+    }
+
+    /* Alert card */
+    .alert-card {
+      padding: 11px 13px;
+      background: linear-gradient(135deg, rgba(254,243,199,0.7), rgba(253,230,138,0.4));
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+    }
+    .alert-card .insight-main { color: #92400e; }
+    .alert-card .insight-sub  { color: #b45309; }
+
+    /* Comparison card */
+    .compare-card {
+      padding: 11px 13px;
+      background: linear-gradient(135deg, rgba(209,250,229,0.6), rgba(167,243,208,0.3));
+      border: 1px solid rgba(52,211,153,0.25);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      gap: 9px;
+      align-items: center;
+    }
+    .compare-card .insight-main { color: #065f46; }
+    .compare-card .insight-val  { color: #059669; }
+
+    /* Save button */
+    .btn-save {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 500;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      position: relative; overflow: hidden;
+      box-shadow: 0 8px 24px rgba(224,112,96,0.35);
+      transition: transform 0.18s, box-shadow 0.18s;
+      margin-top: 14px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      animation: fadein 0.6s 0.5s both;
+    }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(224,112,96,0.45); }
+    .btn-save:active { transform: translateY(0); }
+    .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      transform: scale(0);
+      animation: ripple-anim 0.55s linear;
+      pointer-events: none;
+    }
+    @keyframes ripple-anim { to { transform: scale(5); opacity: 0; } }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 24px 22px;
+      background: rgba(253,246,242,0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(232,165,152,0.15);
+      z-index: 100;
+      border-radius: 0 0 40px 40px;
+    }
+    .nav-row { display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 7px; cursor: pointer; }
+    .nav-icon {
+      width: 62px; height: 62px; border-radius: 18px;
+      background: rgba(255,255,255,0.62);
+      border: 1px solid rgba(255,255,255,0.88);
+      box-shadow: 0 4px 16px rgba(180,90,70,0.10),
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        inset 0 -1px 0 rgba(200,140,120,0.08);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s;
+    }
+    .nav-icon::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 52%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.10) 100%);
+      border-radius: 18px 18px 60% 60% / 18px 18px 40% 40%;
+      pointer-events: none; z-index: 2;
+    }
+    .nav-icon.active {
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      box-shadow: 0 6px 20px rgba(224,112,96,0.38),
+        inset 0 1px 0 rgba(255,255,255,0.35),
+        inset 0 -1px 0 rgba(180,60,40,0.1);
+    }
+    .nav-icon svg { width: 36px; height: 36px; position: relative; z-index: 1; }
+    .nav-item:hover .nav-icon { transform: translateY(-3px) scale(1.04); }
+    .nav-label { font-size: 11px; color: var(--muted); font-weight: 400; }
+    .nav-item.active .nav-label { color: var(--rose-dk); font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>ผลการสแกน</h1>
+      <p>Scan Result · ฉลากเบอร์ 5</p>
+    </div>
+    <div class="back-btn" onclick="history.back()">←</div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ── SCAN VIEWPORT ── -->
+    <div class="scan-section">
+      <div class="status-badge">
+        <div class="status-dot-green"></div>
+        สแกนสำเร็จ: ตรวจพบแอร์ Samsung
+      </div>
+
+      <div class="viewport">
+        <div class="viewport-inner">
+          <div class="ac-silhouette">
+            <div class="ac-led"></div>
+            
+          </div>
+          <div class="scan-frame">
+            <div class="c-br"></div>
+            <div class="c-bl"></div>
+          </div>
+          <div class="scan-laser"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LABEL DATA CARD ── -->
+    <div class="glass-card" style="animation: fadein 0.6s 0.25s both;">
+      <div class="card-title">ข้อมูลจากฉลากเบอร์ 5</div>
+
+      <div class="device-row">
+        <div class="device-icon-box">❄️</div>
+        <div class="device-specs">
+          <div class="device-model">Samsung AR12AYAA</div>
+          <div class="device-detail">
+            ขนาด: 12,000 BTU &nbsp;·&nbsp; ประเภท: แอร์ติดผนัง<br>
+            ประสิทธิภาพ (SEER): <strong style="color:var(--text)">22.5</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="stars-row">
+        <span class="star">⭐</span>
+        <span class="star">⭐</span>
+        <span class="star">⭐</span>
+        <span class="star">⭐</span>
+        <span class="star">⭐</span>
+        <span class="stars-label">เบอร์ 5 (ประหยัดสูงสุด)</span>
+      </div>
+
+      <div class="cost-official">
+        <div class="cost-official-val">฿7,500</div>
+        <div class="cost-official-unit">บาท/ปี</div>
+        <div class="cost-official-label">ค่าไฟ<br>อย่างเป็นทางการ</div>
+      </div>
+    </div>
+
+    <!-- ── AI ANALYSIS CARD ── -->
+    <div class="glass-card ai-card">
+      <div class="ai-title-row">
+        <div class="ai-icon">🤖</div>
+        <div>
+          <div class="ai-title">AI วิเคราะห์เจาะลึก</div>
+          <div class="ai-sub">Deep AI Analysis</div>
+        </div>
+      </div>
+
+      <!-- Cost breakdown -->
+      <div class="insight-row">
+        <div class="insight-icon">☀️</div>
+        <div class="insight-body">
+          <div class="insight-main">ค่าไฟเฉลี่ยต่อวัน</div>
+          <div class="insight-sub">คำนวณตามอัตรา TOU (Peak / Off-Peak)</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;">
+          <div class="insight-val">~20.50 ฿/วัน</div>
+          <div style="font-size:10.5px;color:var(--muted);font-weight:300;">~615 ฿/เดือน</div>
+        </div>
+      </div>
+
+      <!-- Room size -->
+      <div class="insight-row">
+        <div class="insight-icon">📍</div>
+        <div class="insight-body">
+          <div class="insight-main">ขนาดห้องที่เหมาะสม</div>
+          <div class="insight-sub">เหมาะกับห้องขนาด</div>
+        </div>
+        <div class="insight-val">14–20 ตร.ม.</div>
+      </div>
+
+      <!-- Dynamic alert -->
+      <div class="alert-card">
+        <div class="insight-icon">🔥</div>
+        <div class="insight-body">
+          <div class="insight-main">Insight: วันนี้ร้อนมาก!</div>
+          <div class="insight-sub">แอร์จะทำงานหนักขึ้น 15% — ค่าไฟวันนี้จะอยู่ที่ประมาณ <strong style="color:#92400e;">24 บาท</strong></div>
+        </div>
+      </div>
+
+      <!-- Comparison upsell -->
+      <div class="compare-card">
+        <div class="insight-icon">💰</div>
+        <div class="insight-body">
+          <div class="insight-main">เทียบกับ Inverter (3 ดาว)</div>
+          <div class="insight-sub">คุณจะประหยัดเพิ่มได้อีก</div>
+        </div>
+        <div class="insight-val" style="color:#059669;">฿1,200/ปี</div>
+      </div>
+
+      <!-- Save button -->
+      <button class="btn-save" onclick="saveDevice(event)">
+        💾 บันทึกอุปกรณ์
+      </button>
+    </div>
+
+  </div><!-- end content -->
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-row">
+
+      <!-- Face ID (ACTIVE) -->
+      <div class="nav-item active" onclick="window.location.href='scanner.html'">
+        <div class="nav-icon active">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="ng1w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0.75)"/></linearGradient></defs>
+            <path d="M8 17V10H15" stroke="url(#ng1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M33 10H40V17" stroke="url(#ng1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M40 31V38H33" stroke="url(#ng1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 38H8V31" stroke="url(#ng1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        
+        
+      </div>
+
+      <!-- Calendar -->
+      <div class="nav-item" onclick="window.location.href='page1.html'">
+        <div class="nav-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="ng2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+            <rect x="9" y="14" width="30" height="25" rx="4" stroke="url(#ng2)" stroke-width="1.5"/>
+            <rect x="9" y="14" width="30" height="9" rx="4" fill="url(#ng2)" opacity="0.2"/>
+            <line x1="9" y1="23" x2="39" y2="23" stroke="url(#ng2)" stroke-width="1.2" opacity="0.4"/>
+            <path d="M17 10V17" stroke="url(#ng2)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M31 10V17" stroke="url(#ng2)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M24 34.5C24 34.5 19.2 31.2 19.2 28C19.2 26 21 24.8 22.8 25.6C23.4 25.9 23.8 26.3 24 26.8C24.2 26.3 24.6 25.9 25.2 25.6C27 24.8 28.8 26 28.8 28C28.8 31.2 24 34.5 24 34.5Z" fill="url(#ng2)" opacity="0.8"/>
+          </svg>
+        </div>
+        
+      </div>
+
+      <!-- Energy Chart -->
+      <div class="nav-item" onclick="window.location.href='advisor.html'">
+        <div class="nav-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs>
+              <linearGradient id="ng3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient>
+              <linearGradient id="ng3f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e88070" stop-opacity="0.3"/><stop offset="100%" stop-color="#e88070" stop-opacity="0"/></linearGradient>
+            </defs>
+            <line x1="11" y1="38" x2="38" y2="38" stroke="url(#ng3)" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+            <line x1="11" y1="38" x2="11" y2="13" stroke="url(#ng3)" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+            <path d="M13 31Q17 27 21 22Q25 17.5 29 20Q33 22 36 16L36 38L13 38Z" fill="url(#ng3f)"/>
+            <path d="M13 31Q17 27 21 22Q25 17.5 29 20Q33 22 36 16" stroke="url(#ng3)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="13" cy="31" r="2.1" fill="url(#ng3)"/>
+            <circle cx="21" cy="22" r="2.1" fill="url(#ng3)"/>
+            <circle cx="29" cy="20" r="2.1" fill="url(#ng3)"/>
+            <circle cx="36" cy="16" r="2.1" fill="url(#ng3)"/>
+            <rect x="13.5" y="33" width="4" height="4.5" rx="1.2" fill="url(#ng3)" opacity="0.45"/>
+            <rect x="21.5" y="31" width="4" height="6.5" rx="1.2" fill="url(#ng3)" opacity="0.45"/>
+            <rect x="29.5" y="29" width="4" height="8.5" rx="1.2" fill="url(#ng3)" opacity="0.45"/>
+          </svg>
+        </div>
+        
+      </div>
+
+      <!-- Apps Grid -->
+      <div class="nav-item" onclick="window.location.href='signup.html'">
+        <div class="nav-icon">
+          <svg viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="ng4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+            <rect x="10" y="10" width="12.5" height="12.5" rx="3.5" fill="url(#ng4)" opacity="0.85"/>
+            <rect x="25.5" y="10" width="12.5" height="12.5" rx="3.5" stroke="url(#ng4)" stroke-width="1.5" fill="url(#ng4)" fill-opacity="0.15"/>
+            <rect x="10" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ng4)" stroke-width="1.5" fill="url(#ng4)" fill-opacity="0.15"/>
+            <rect x="25.5" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ng4)" stroke-width="1.5" fill="url(#ng4)" fill-opacity="0.28"/>
+          </svg>
+        </div>
+        
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end phone -->
+
+<script>
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const size = 5 + Math.random() * 7;
+    p.style.cssText = `left:${Math.random()*100}vw;width:${size}px;height:${size}px;animation-duration:${10+Math.random()*14}s;animation-delay:${Math.random()*10}s;opacity:${0.15+Math.random()*0.3};`;
+    document.body.appendChild(p);
+  }
+
+  function saveDevice(e) {
+    const btn = e.currentTarget;
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const sz = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${sz}px;height:${sz}px;left:${e.clientX-rect.left-sz/2}px;top:${e.clientY-rect.top-sz/2}px`;
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ บันทึกแล้ว!';
+    btn.style.background = 'linear-gradient(135deg, #6ee7b7, #34d399)';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = '';
+    }, 2000);
+  }
+</script>
+</body>
+</html>
