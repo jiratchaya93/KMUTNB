@@ -1,0 +1,328 @@
+<!-- ══════════════════════════════
+       VIEW 5 : APPS COMPARE
+  ══════════════════════════════ -->
+  <div class="view" id="v-apps">
+ 
+    <div class="apps-header fi" style="animation-delay:.05s">
+      <div>
+        <h1>เปรียบเทียบ</h1>
+        <p>อุปกรณ์ไฟฟ้า · เลือก 2 รายการ</p>
+      </div>
+      <div class="avatar">⊞</div>
+    </div>
+ 
+    <div class="apps-content">
+ 
+      <!-- Slot labels -->
+      <div class="slot-label-row fi" style="animation-delay:.08s">
+        <div class="slot-label">⚡ อุปกรณ์ A</div>
+        <div class="slot-label">⚡ อุปกรณ์ B</div>
+      </div>
+ 
+      <!-- Room tabs + device grid (side by side) -->
+      <div class="slot-pair fi" style="animation-delay:.1s">
+ 
+        <!-- Slot A -->
+        <div class="slot-col">
+          <div class="room-tabs" id="roomTabsA">
+            <div class="room-tab active" onclick="setRoom('A','bedroom',this)">🛏 นอน</div>
+            <div class="room-tab" onclick="setRoom('A','living',this)">🛋 นั่งเล่น</div>
+            <div class="room-tab" onclick="setRoom('A','kitchen',this)">🍳 ครัว</div>
+          </div>
+          <div class="device-grid" id="gridA"></div>
+        </div>
+ 
+        <!-- Slot B -->
+        <div class="slot-col">
+          <div class="room-tabs" id="roomTabsB">
+            <div class="room-tab active" onclick="setRoom('B','bedroom',this)">🛏 นอน</div>
+            <div class="room-tab" onclick="setRoom('B','living',this)">🛋 นั่งเล่น</div>
+            <div class="room-tab" onclick="setRoom('B','kitchen',this)">🍳 ครัว</div>
+          </div>
+          <div class="device-grid" id="gridB"></div>
+        </div>
+ 
+      </div>
+ 
+      <!-- Compare cards -->
+      <div class="compare-icons-row fi" style="animation-delay:.15s">
+        <div class="compare-device-card">
+          <div class="dev-big-icon fan" id="iconA"><span>❄️</span></div>
+          <div class="dev-card-room" id="roomA">ห้องนอน</div>
+          <div class="dev-card-name" id="nameA">แอร์</div>
+          <div class="dev-card-watt" id="wattA">900</div>
+          <div class="dev-card-watt-lbl">วัตต์/ชั่วโมง</div>
+        </div>
+        <div class="compare-device-card">
+          <div class="dev-big-icon fan" id="iconB"><span>🌀</span></div>
+          <div class="dev-card-room" id="roomB">ห้องนอน</div>
+          <div class="dev-card-name" id="nameB">พัดลม</div>
+          <div class="dev-card-watt" id="wattB">50</div>
+          <div class="dev-card-watt-lbl">วัตต์/ชั่วโมง</div>
+        </div>
+      </div>
+ 
+      <!-- Summary pills -->
+      <div class="compare-summary fi" style="animation-delay:.18s">
+        <div class="sum-pill">
+          <div class="sum-pill-icon">💡</div>
+          <div class="sum-pill-val" id="sumDiff">850 W</div>
+          <div class="sum-pill-lbl">ต่างกัน</div>
+        </div>
+        <div class="sum-pill">
+          <div class="sum-pill-icon">💰</div>
+          <div class="sum-pill-val" id="sumCostDiff">฿3.06</div>
+          <div class="sum-pill-lbl">ต่อชั่วโมง</div>
+        </div>
+        <div class="sum-pill">
+          <div class="sum-pill-icon">📅</div>
+          <div class="sum-pill-val" id="sumMonthly">฿2,203</div>
+          <div class="sum-pill-lbl">ต่อเดือน (ต่างกัน)</div>
+        </div>
+      </div>
+ 
+      <!-- Comparison table -->
+      <div class="compare-table fi" style="margin-top:10px;animation-delay:.22s">
+        <div class="ct-header">
+          <div class="ct-header-cell">รายการ</div>
+          <div class="ct-header-cell" id="thA">แอร์</div>
+          <div class="ct-header-cell" id="thB">พัดลม</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-label">กำลังไฟ</div>
+          <div class="ct-val" id="rowWattA">900 <small>W</small></div>
+          <div class="ct-val" id="rowWattB">50 <small>W</small></div>
+        </div>
+        <div class="ct-row highlight">
+          <div class="ct-label">ค่าไฟ/ชั่วโมง</div>
+          <div class="ct-val worse" id="rowCostA">฿3.24</div>
+          <div class="ct-val better" id="rowCostB">฿0.18</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-label">ค่าไฟ/วัน (8h)</div>
+          <div class="ct-val" id="rowDayA">฿25.92</div>
+          <div class="ct-val" id="rowDayB">฿1.44</div>
+        </div>
+        <div class="ct-row highlight">
+          <div class="ct-label">ค่าไฟ/เดือน</div>
+          <div class="ct-val" id="rowMonthA">฿778</div>
+          <div class="ct-val" id="rowMonthB">฿43</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-label">ฟังก์ชัน</div>
+          <div class="ct-val" id="rowCoolA">เย็นมาก</div>
+          <div class="ct-val" id="rowCoolB">ปานกลาง</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-label">เสียง</div>
+          <div class="ct-val" id="rowNoiseA">ปานกลาง</div>
+          <div class="ct-val" id="rowNoiseB">น้อย</div>
+        </div>
+        <div class="ct-row">
+          <div class="ct-label">ราคา</div>
+          <div class="ct-val" id="rowPriceA">฿12,000+</div>
+          <div class="ct-val" id="rowPriceB">฿500–1,500</div>
+        </div>
+      </div>
+ 
+    </div><!-- end apps-content -->
+ 
+    <!-- Nav — Apps ACTIVE -->
+    <div class="bottom-nav">
+      <div class="nav-row">
+ 
+        <div class="nav-item" onclick="goTo('v-scanner')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="xn1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <path d="M8 17V10H15" stroke="url(#xn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M33 10H40V17" stroke="url(#xn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M40 31V38H33" stroke="url(#xn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 38H8V31" stroke="url(#xn1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="nav-label">Scanner</span>
+        </div>
+ 
+        <div class="nav-item" onclick="goTo('v-dashboard')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="xn2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <rect x="9" y="13" width="30" height="26" rx="4.5" stroke="url(#xn2)" stroke-width="1.6"/>
+              <rect x="9" y="13" width="30" height="10" rx="4.5" fill="url(#xn2)" opacity=".2"/>
+              <line x1="9" y1="23" x2="39" y2="23" stroke="url(#xn2)" stroke-width="1.1" opacity=".4"/>
+              <path d="M17 9V15" stroke="url(#xn2)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M31 9V15" stroke="url(#xn2)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M24 35C24 35 18.5 31.2 18.5 27.5C18.5 25.3 20.5 24 22.5 25C23.1 25.3 23.7 25.8 24 26.4C24.3 25.8 24.9 25.3 25.5 25C27.5 24 29.5 25.3 29.5 27.5C29.5 31.2 24 35 24 35Z" fill="url(#xn2)" opacity=".75"/>
+            </svg>
+          </div>
+          <span class="nav-label">Dashboard</span>
+        </div>
+ 
+        <div class="nav-item" onclick="goTo('v-advisor')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs>
+              <linearGradient id="xn3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient>
+              <linearGradient id="xn3f" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e88070" stop-opacity=".3"/><stop offset="100%" stop-color="#e88070" stop-opacity="0"/></linearGradient>
+            </defs>
+              <line x1="11" y1="37" x2="38" y2="37" stroke="url(#xn3)" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
+              <line x1="11" y1="37" x2="11" y2="12" stroke="url(#xn3)" stroke-width="1.3" stroke-linecap="round" opacity=".45"/>
+              <path d="M13 30Q17 26 21 21Q25 16.5 29 19Q33 21.5 36 15L36 37L13 37Z" fill="url(#xn3f)"/>
+              <path d="M13 30Q17 26 21 21Q25 16.5 29 19Q33 21.5 36 15" stroke="url(#xn3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="13" cy="30" r="2.2" fill="url(#xn3)"/>
+              <circle cx="21" cy="21" r="2.2" fill="url(#xn3)"/>
+              <circle cx="29" cy="19" r="2.2" fill="url(#xn3)"/>
+              <circle cx="36" cy="15" r="2.2" fill="url(#xn3)"/>
+              <rect x="14" y="32" width="3.5" height="4.5" rx="1" fill="url(#xn3)" opacity=".4"/>
+              <rect x="21.5" y="30" width="3.5" height="6.5" rx="1" fill="url(#xn3)" opacity=".4"/>
+              <rect x="29" y="28" width="3.5" height="8.5" rx="1" fill="url(#xn3)" opacity=".4"/>
+            </svg>
+          </div>
+          <span class="nav-label">Energy</span>
+        </div>
+ 
+        <!-- Apps ACTIVE -->
+        <div class="nav-item" onclick="goTo('v-apps')">
+          <div class="nav-icon active-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="xn4w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0.70)"/></linearGradient></defs>
+              <rect x="10" y="10" width="12" height="12" rx="3.5" fill="url(#xn4w)" opacity=".95"/>
+              <rect x="26" y="10" width="12" height="12" rx="3.5" fill="url(#xn4w)" opacity=".6"/>
+              <rect x="10" y="26" width="12" height="12" rx="3.5" fill="url(#xn4w)" opacity=".6"/>
+              <rect x="26" y="26" width="12" height="12" rx="3.5" fill="url(#xn4w)" opacity=".8"/>
+            </svg>
+          </div>
+          <span class="nav-label active-label">Apps</span>
+        </div>
+ 
+      </div>
+    </div>
+ 
+  </div><!-- end v-apps -->
+</div>
+<script>
+function goTo(){} // stub
+// ── Apps Compare ────────────────────────────────────────
+const ROOMS = {
+  bedroom: {
+    label: '🛏 ห้องนอน',
+    devices: [
+      { id:'ac',     emoji:'❄️', name:'แอร์',       cls:'ac',     watt:900,  fn:'เย็นมาก',   noise:'ปานกลาง', price:'฿12,000+' },
+      { id:'fan',    emoji:'🌀', name:'พัดลม',      cls:'fan',    watt:50,   fn:'ปานกลาง',   noise:'น้อย',    price:'฿500–1,500' },
+      { id:'light',  emoji:'💡', name:'ไฟห้องนอน',  cls:'light',  watt:15,   fn:'แสงสว่าง',  noise:'ไม่มี',   price:'฿80–300' },
+      { id:'tv',     emoji:'📺', name:'ทีวีนอน',    cls:'tv',     watt:120,  fn:'บันเทิง',   noise:'น้อย',    price:'฿5,000+' },
+    ]
+  },
+  living: {
+    label: '🛋 ห้องนั่งเล่น',
+    devices: [
+      { id:'tv2',    emoji:'📺', name:'ทีวีใหญ่',   cls:'tv',     watt:200,  fn:'บันเทิง',   noise:'น้อย',    price:'฿15,000+' },
+      { id:'ac2',    emoji:'❄️', name:'แอร์นั่งเล่น',cls:'ac',    watt:1200, fn:'เย็นมาก',   noise:'ปานกลาง', price:'฿18,000+' },
+      { id:'fan2',   emoji:'🌀', name:'พัดลมตั้งพื้น',cls:'fan',  watt:60,   fn:'ปานกลาง',   noise:'น้อย',    price:'฿800–2,000' },
+      { id:'router', emoji:'📡', name:'เราเตอร์',    cls:'router', watt:10,   fn:'อินเทอร์เน็ต',noise:'ไม่มี', price:'฿1,000–3,000' },
+    ]
+  },
+  kitchen: {
+    label: '🍳 ห้องครัว',
+    devices: [
+      { id:'fridge',  emoji:'🧊', name:'ตู้เย็น',     cls:'fridge', watt:150,  fn:'แช่เย็น',   noise:'น้อย',    price:'฿8,000+' },
+      { id:'washer',  emoji:'🫧', name:'เครื่องซัก',  cls:'washer', watt:500,  fn:'ซักผ้า',    noise:'ปานกลาง', price:'฿7,000+' },
+      { id:'heater',  emoji:'🌡', name:'เครื่องทำน้ำร้อน',cls:'heater',watt:3000,fn:'น้ำร้อน',noise:'น้อย',   price:'฿2,000+' },
+      { id:'light2',  emoji:'💡', name:'ไฟครัว',      cls:'light',  watt:20,   fn:'แสงสว่าง',  noise:'ไม่มี',   price:'฿100–400' },
+    ]
+  }
+};
+ 
+let stateA = { room:'bedroom', device: ROOMS.bedroom.devices[0] };
+let stateB = { room:'bedroom', device: ROOMS.bedroom.devices[1] };
+ 
+function setRoom(slot, roomKey, tabEl) {
+  const state = slot==='A' ? stateA : stateB;
+  state.room = roomKey;
+  // update tabs
+  tabEl.closest('.room-tabs').querySelectorAll('.room-tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  // auto-pick first device of new room
+  state.device = ROOMS[roomKey].devices[0];
+  renderGrid(slot);
+  renderCompare();
+}
+ 
+function pickDevice(slot, devId) {
+  const state = slot==='A' ? stateA : stateB;
+  const room  = ROOMS[state.room];
+  state.device = room.devices.find(d => d.id === devId) || room.devices[0];
+  renderGrid(slot);
+  renderCompare();
+}
+ 
+function renderGrid(slot) {
+  const state = slot==='A' ? stateA : stateB;
+  const grid  = document.getElementById('grid'+slot);
+  const devs  = ROOMS[state.room].devices;
+  grid.innerHTML = devs.map(d => `
+    <div class="dg-item ${d.id===state.device.id?'selected':''}" onclick="pickDevice('${slot}','${d.id}')">
+      <div class="dg-icon ${d.cls}"><span>${d.emoji}</span></div>
+      <div class="dg-name">${d.name}</div>
+      <div class="dg-watt">${d.watt}W</div>
+    </div>`).join('');
+}
+ 
+function fmt(n)  { return '฿'+Math.round(n).toLocaleString('th-TH'); }
+function fmtF(n) { return '฿'+n.toFixed(2); }
+ 
+function renderCompare() {
+  const a = stateA.device, b = stateB.device;
+  const rate = 3.6;
+  const cAh = a.watt/1000*rate, cBh = b.watt/1000*rate;
+  const cAd = cAh*8,            cBd = cBh*8;
+  const cAm = cAd*30,           cBm = cBd*30;
+ 
+  // Big cards
+  ['A','B'].forEach(s => {
+    const d = s==='A'?a:b, st = s==='A'?stateA:stateB;
+    document.getElementById('icon'+s).className = 'dev-big-icon '+d.cls;
+    document.getElementById('icon'+s).querySelector('span').textContent = d.emoji;
+    document.getElementById('name'+s).textContent  = d.name;
+    document.getElementById('room'+s).textContent  = ROOMS[st.room].label;
+    document.getElementById('watt'+s).textContent  = d.watt;
+  });
+ 
+  // Table headers
+  document.getElementById('thA').textContent = a.name;
+  document.getElementById('thB').textContent = b.name;
+ 
+  // Watt
+  const bW = a.watt <= b.watt;
+  document.getElementById('rowWattA').innerHTML = a.watt+'<small>W</small>';
+  document.getElementById('rowWattB').innerHTML = b.watt+'<small>W</small>';
+  document.getElementById('rowWattA').className = 'ct-val'+(bW?' better':' worse');
+  document.getElementById('rowWattB').className = 'ct-val'+(!bW?' better':' worse');
+ 
+  // Cost/hr
+  document.getElementById('rowCostA').textContent = fmtF(cAh);
+  document.getElementById('rowCostB').textContent = fmtF(cBh);
+  document.getElementById('rowCostA').className = 'ct-val'+(cAh<=cBh?' better':' worse');
+  document.getElementById('rowCostB').className = 'ct-val'+(cBh<=cAh?' better':' worse');
+ 
+  document.getElementById('rowDayA').textContent   = fmtF(cAd);
+  document.getElementById('rowDayB').textContent   = fmtF(cBd);
+  document.getElementById('rowMonthA').textContent = fmt(cAm);
+  document.getElementById('rowMonthB').textContent = fmt(cBm);
+  document.getElementById('rowCoolA').textContent  = a.fn;
+  document.getElementById('rowCoolB').textContent  = b.fn;
+  document.getElementById('rowNoiseA').textContent = a.noise;
+  document.getElementById('rowNoiseB').textContent = b.noise;
+  document.getElementById('rowPriceA').textContent = a.price;
+  document.getElementById('rowPriceB').textContent = b.price;
+ 
+  // Summary pills
+  document.getElementById('sumDiff').textContent     = Math.abs(a.watt-b.watt)+' W';
+  document.getElementById('sumCostDiff').textContent = fmtF(Math.abs(cAh-cBh));
+  document.getElementById('sumMonthly').textContent  = fmt(Math.abs(cAm-cBm));
+}
+ 
+// init
+renderGrid('A');
+renderGrid('B');
+renderCompare();
+</script>
+</body>
+</html>
