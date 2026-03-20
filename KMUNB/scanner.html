@@ -487,6 +487,7 @@
   </div>
 
   
+
   <!-- Premium Icon Row -->
   <div class="icon-row">
 
@@ -501,7 +502,7 @@
           <path d="M15 38H8V31" stroke="url(#ig1w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <span class="icon-label" style="color: var(--rose-dk); font-weight: 500;">Face ID</span>
+      
     </div>
 
     <!-- Calendar -->
@@ -517,11 +518,11 @@
           <path d="M24 34.5C24 34.5 19.2 31.2 19.2 28C19.2 26 21 24.8 22.8 25.6C23.4 25.9 23.8 26.3 24 26.8C24.2 26.3 24.6 25.9 25.2 25.6C27 24.8 28.8 26 28.8 28C28.8 31.2 24 34.5 24 34.5Z" fill="url(#ig2)" opacity="0.8"/>
         </svg>
       </div>
-      <span class="icon-label">Calendar</span>
+      
     </div>
 
     <!-- Energy Chart -->
-    <div class="icon-tile">
+    <div class="icon-tile" onclick="window.location.href='advisor.html'" style="cursor:pointer;">
       <div class="icon-glass">
         <svg viewBox="0 0 48 48" fill="none">
           <defs>
@@ -541,7 +542,7 @@
           <rect x="29.5" y="29" width="4" height="8.5" rx="1.2" fill="url(#ig3)" opacity="0.45"/>
         </svg>
       </div>
-      <span class="icon-label">Energy</span>
+    
     </div>
 
     <!-- Apps Grid -->
@@ -555,7 +556,7 @@
           <rect x="25.5" y="25.5" width="12.5" height="12.5" rx="3.5" stroke="url(#ig4)" stroke-width="1.5" fill="url(#ig4)" fill-opacity="0.28"/>
         </svg>
       </div>
-      <span class="icon-label">Apps</span>
+     
     </div>
 
   </div>
@@ -673,6 +674,9 @@
     btnScan.disabled = false;
     spinner.style.display = 'none';
     btnLabel.textContent = '📷 สแกนข้อมูลพลังงาน';
+
+    // Navigate to scan result page
+    setTimeout(() => window.location.href = 'fakescan.html', 600);
   }
 
   startCamera();
