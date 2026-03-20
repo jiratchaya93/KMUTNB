@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Energy Advisor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rose: #e8a598; --rose-dk: #c97b6e; --rose-lt: #f5d5cc;
+      --cream: #fdf6f2; --text: #3a2a25; --muted: #9c7b74;
+      --glass: rgba(255,255,255,0.72);
+      --shadow: 0 8px 28px rgba(180,100,80,0.13);
+      --shadow-sm: 0 4px 14px rgba(180,100,80,0.09);
+    }
+    html, body {
+      height: 100%; font-family: "DM Sans", sans-serif;
+      background: var(--cream);
+      display: flex; justify-content: center; align-items: center;
+      overflow: hidden;
+    }
+    body::before, body::after {
+      content: ""; position: fixed; border-radius: 50%;
+      filter: blur(80px); opacity: 0.48; pointer-events: none; z-index: 0;
+    }
+    body::before {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, #f0b8a8, #f5d5cc);
+      top: -120px; right: -80px;
+      animation: drift1 12s ease-in-out infinite alternate;
+    }
+    body::after {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #e8cfc8, #f8ebe6);
+      bottom: -100px; left: -60px;
+      animation: drift2 14s ease-in-out infinite alternate;
+    }
+    @keyframes drift1 { to { transform: translate(-30px,40px) scale(1.05); } }
+    @keyframes drift2 { to { transform: translate(30px,-30px) scale(1.08); } }
+    .petal {
+      position: fixed; border-radius: 0 60% 0 60%;
+      background: rgba(232,165,152,0.32); pointer-events: none;
+      animation: fall linear infinite; z-index: 0;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+      10% { opacity: 1; } 90% { opacity: 0.45; }
+      100% { transform: translateY(110vh) rotate(720deg) scale(0.4); opacity: 0; }
+    }
+    .phone {
+      position: relative; z-index: 10;
+      width: 375px; height: 780px; display: flex; flex-direction: column;
+      background: rgba(255,255,255,0.72);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255,255,255,0.82); border-radius: 40px;
+      box-shadow: 0 20px 60px rgba(180,100,80,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+      overflow: hidden;
+      animation: rise 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(36px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .phone::before {
+      content: ""; position: absolute; top: 0; left: 40px; right: 40px; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent);
+      border-radius: 0 0 4px 4px; z-index: 20; pointer-events: none;
+    }
+    @keyframes fadein { from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);} }
+    .fi { animation: fadein 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #f2b8a8, #e88070);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(232,128,112,0.3); font-size: 15px;
+    }
+    .bottom-nav {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 10px 20px 18px;
+      background: rgba(253,246,242,0.9); backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(232,165,152,0.14); z-index: 100; border-radius: 0 0 40px 40px;
+    }
+    .nav-row { display: flex; justify-content: space-around; align-items: center; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+    .nav-icon {
+      width: 58px; height: 58px; border-radius: 16px;
+      background: rgba(255,255,255,0.62); border: 1px solid rgba(255,255,255,0.88);
+      box-shadow: 0 4px 16px rgba(180,90,70,0.10), inset 0 1px 0 rgba(255,255,255,0.95);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; transition: transform 0.18s;
+    }
+    .nav-icon::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 52%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.55), rgba(255,255,255,0.08));
+      border-radius: 16px 16px 60% 60% / 16px 16px 40% 40%;
+      pointer-events: none; z-index: 2;
+    }
+    .nav-icon.active-icon {
+      background: linear-gradient(135deg, #efaa9a, #e07060);
+      box-shadow: 0 6px 20px rgba(224,112,96,0.38), inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    .nav-icon svg { width: 32px; height: 32px; position: relative; z-index: 1; }
+    .nav-label { font-size: 10.5px; color: var(--muted); font-weight: 400; }
+    .nav-label.active-label { color: var(--rose-dk); font-weight: 500; }
+    .sec-label { display:flex;justify-content:space-between;align-items:baseline;margin:6px 4px 8px; }
+    .sec-label h2 { font-size:15px;font-weight:500;color:var(--text); }
+    .sec-label>span { font-size:11px;color:var(--rose-dk); }
+    .sec-sub { font-size:11px;color:var(--muted);font-weight:300;margin-left:4px; }
+    #v-advisor { background: transparent; }
+    .adv-header {
+      padding: 18px 22px 10px;
+      display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+    }
+    .adv-header h1 {
+      font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400;
+      color: var(--text); letter-spacing: 0.01em;
+    }
+    .adv-header p { font-size: 11.5px; color: var(--muted); font-weight: 300; margin-top: 1px; }
+    .adv-content {
+      flex: 1; overflow-y: auto; padding: 0 16px 108px;
+      -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .adv-content::-webkit-scrollbar { display: none; }
+    .temp-card {
+      background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.82); border-radius: 24px;
+      padding: 16px 16px 14px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .temp-card::before {
+      content: ''; position: absolute; top: 0; left: 30px; right: 30px; height: 2.5px;
+      background: linear-gradient(90deg, transparent, var(--rose), transparent); border-radius: 0 0 3px 3px;
+    }
+    .temp-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .temp-icon-grp { display: flex; align-items: center; gap: 8px; }
+    .temp-icon-bg {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, #ffca7a, #ff8c42);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+      box-shadow: 0 4px 12px rgba(255,140,66,0.3);
+    }
+    .temp-ttl { font-size: 13px; font-weight: 500; color: var(--text); }
+    .temp-sbt { font-size: 11px; color: var(--muted); font-weight: 300; }
+    .temp-peak-val {
+      font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 400;
+      color: #e07060; line-height: 1; text-align: right;
+    }
+    .temp-peak-lbl { font-size: 10px; color: var(--muted); font-weight: 300; margin-top: 2px; text-align: right; }
+    .rec-hdr-row { display: flex; align-items: center; gap: 10px; margin: 16px 4px 12px; }
+    .bulb-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, #fde68a, #f59e0b);
+      display: flex; align-items: center; justify-content: center; font-size: 17px;
+      box-shadow: 0 4px 14px rgba(245,158,11,0.35); flex-shrink: 0;
+      animation: glow 2.5s ease-in-out infinite;
+    }
+    @keyframes glow {
+      0%,100% { box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
+      50%      { box-shadow: 0 4px 22px rgba(245,158,11,0.6); }
+    }
+    @keyframes tempPulse {
+      0%   { transform: scale(1); opacity: 0.7; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+    @keyframes tempBlink {
+      0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+    .rec-hdr-text h3 { font-size: 14px; font-weight: 500; color: var(--text); }
+    .rec-hdr-text p  { font-size: 11px; color: var(--muted); font-weight: 300; }
+    .sug-card {
+      background: rgba(255,255,255,0.78); border: 1px solid rgba(232,165,152,0.18);
+      border-radius: 20px; padding: 13px 15px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow-sm); margin-bottom: 10px;
+      transition: transform 0.18s, box-shadow 0.18s; cursor: pointer;
+    }
+    .sug-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(180,90,70,0.14); }
+    .sug-ico {
+      width: 46px; height: 46px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 22px; position: relative; overflow: hidden;
+    }
+    .sug-ico::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.45), rgba(255,255,255,0.05));
+      border-radius: 14px 14px 60% 60% / 14px 14px 30% 30%; z-index: 1; pointer-events: none;
+    }
+    .sug-ico span { position: relative; z-index: 2; }
+    .sug-ico.ac { background: linear-gradient(135deg,#dbeafe,#93c5fd); box-shadow: 0 4px 12px rgba(147,197,253,0.4); }
+    .sug-ico.tv { background: linear-gradient(135deg,#fce7f3,#f9a8d4); box-shadow: 0 4px 12px rgba(249,168,212,0.4); }
+    .sug-bdy { flex: 1; min-width: 0; }
+    .sug-ttl { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sug-tme { font-size: 11px; color: var(--muted); font-weight: 300; margin-top: 2px; }
+    .sug-bdg { flex-shrink: 0; font-size: 13px; font-weight: 500; padding: 5px 11px; border-radius: 12px; white-space: nowrap; }
+    .sug-bdg.save { background: rgba(125,206,130,0.14); color: #3a8a40; }
+    .sug-bdg.cost { background: rgba(232,165,152,0.18); color: var(--rose-dk); }
+ 
+    /* ── Swipeable Rec Card ── */
+    .rec-swipe-wrap {
+      position: relative; overflow: hidden;
+      border-radius: 20px; margin-bottom: 0;
+      /* Stagger slide-in */
+      opacity: 0; transform: translateX(-28px);
+      transition: opacity 0.45s cubic-bezier(0.16,1,0.3,1),
+                  transform 0.45s cubic-bezier(0.16,1,0.3,1);
+    }
+    .rec-swipe-wrap.visible { opacity: 1; transform: translateX(0); }
+ 
+    /* Action background (revealed on swipe) */
+    .rec-action-bg {
+      position: absolute; inset: 0; border-radius: 20px;
+      display: flex; align-items: center;
+      justify-content: flex-end; padding-right: 20px;
+      font-size: 13px; font-weight: 600;
+    }
+    .rec-action-bg.done {
+      background: linear-gradient(135deg, #6ee7b7, #34d399);
+      color: white; justify-content: flex-end;
+    }
+    .rec-action-bg.dismiss {
+      background: linear-gradient(135deg, #fca5a5, #f87171);
+      color: white; justify-content: flex-start;
+      padding-left: 20px; padding-right: 0;
+    }
+ 
+    /* Card front */
+    .rec-card-front {
+      position: relative; z-index: 2;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(232,165,152,0.18);
+      border-radius: 20px; padding: 13px 15px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 4px 14px rgba(180,90,70,0.09);
+      transition: transform 0.08s linear, box-shadow 0.2s;
+      cursor: grab; user-select: none;
+      will-change: transform;
+    }
+    .rec-card-front.swiping { transition: none; }
+    .rec-card-front.snap-back {
+      transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+    }
+    .rec-card-front.snap-out {
+      transition: transform 0.3s ease-in, opacity 0.3s ease-in;
+      opacity: 0;
+    }
+ 
+    /* Hint pulse on first load */
+    @keyframes swipeHint {
+      0%   { transform: translateX(0); }
+      20%  { transform: translateX(-18px); }
+      50%  { transform: translateX(10px); }
+      75%  { transform: translateX(-6px); }
+      100% { transform: translateX(0); }
+    }
+    .rec-card-front.hint { animation: swipeHint 0.8s cubic-bezier(0.36,0.07,0.19,0.97) both; }
+ 
+    /* Completed state */
+    .rec-swipe-wrap.completed .rec-card-front {
+      opacity: 0.45; filter: grayscale(0.4);
+    }
+    .rec-done-badge {
+      position: absolute; top: 8px; right: 10px; z-index: 3;
+      background: #34d399; color: white; font-size: 10px; font-weight: 600;
+  </style>
+</head>
+<body>
+<div id="petals"></div>
+<div class="phone">
+  <div class="view" id="v-advisor">
+ 
+    <div class="adv-header fi" style="animation-delay:.05s">
+      <div>
+        <h1>Energy Advisor</h1>
+        <p>วันนี้, พุธ 19 มีนาคม 2568</p>
+      </div>
+      <div class="avatar">💡</div>
+    </div>
+ 
+    <div class="adv-content">
+ 
+      <!-- Temperature section label -->
+      <div class="sec-label fi" style="animation-delay:.1s">
+        <div><h2>กราฟอุณหภูมิ</h2><span class="sec-sub">Temperature Chart</span></div>
+        <span>วันนี้ ›</span>
+      </div>
+ 
+      <!-- Temperature card -->
+      <div class="temp-card fi" style="animation-delay:.15s">
+        <div class="temp-hdr">
+          <div class="temp-icon-grp">
+            <div class="temp-icon-bg">🌡️</div>
+            <div>
+              <div class="temp-ttl" style="display:flex;align-items:center;gap:6px;">
+                อุณหภูมิ (องศา)
+                <!-- City selector -->
+                <select id="tempCitySelect" style="
+                  font-family:'DM Sans',sans-serif;font-size:10px;
+                  border:1px solid rgba(232,165,152,0.3);border-radius:8px;
+                  background:rgba(255,255,255,0.7);color:var(--rose-dk);
+                  padding:2px 4px;cursor:pointer;outline:none;
+                  font-weight:500;"></select>
+              </div>
+              <div class="temp-sbt" id="tempTimeRange">กำลังโหลดข้อมูล...</div>
+            </div>
+          </div>
+          <div>
+            <div class="temp-peak-val" id="tempPeakVal">--°C</div>
+            <div class="temp-peak-lbl">ตอนนี้</div>
+          </div>
+        </div>
+ 
+        <!-- Canvas chart with tooltip -->
+        <div style="position:relative;user-select:none;overflow:hidden;border-radius:10px;" id="tempChartWrap">
+          <canvas id="tempChart" style="width:100%;display:block;touch-action:none;"></canvas>
+          <!-- Tooltip only - live dot drawn inside canvas now -->
+          <div id="tempTooltip" style="
+            position:absolute;pointer-events:none;
+            background:linear-gradient(135deg,#fb923c,#f59e0b);
+            color:white;font-size:11px;font-weight:600;
+            padding:5px 10px;border-radius:12px;
+            box-shadow:0 4px 14px rgba(251,146,60,0.45);
+            transform:translate(-50%,-130%);display:none;
+            white-space:nowrap;">
+          </div>
+        </div>
+ 
+        <!-- Legend -->
+        <div style="display:flex;gap:16px;margin-top:10px;padding:0 4px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:10px;height:8px;border-radius:2px;background:linear-gradient(to top,#fb923c,#fdba74);opacity:.85;"></div>
+            <span style="font-size:8px;color:rgba(156,123,116,0.85);">อุณหภูมิ (bar)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <div style="width:16px;height:2px;background:#f59e0b;border-radius:2px;position:relative;">
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:5px;height:5px;border-radius:50%;background:#f59e0b;"></div>
+            </div>
+            <span style="font-size:8px;color:rgba(156,123,116,0.85);">แนวโน้ม (line)</span>
+          </div>
+          <div id="tempLiveLabel" style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#7dce82;animation:tempBlink 1.2s ease-in-out infinite;"></div>
+            <span style="font-size:8px;color:#5aaa60;font-weight:500;">LIVE</span>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- Recommendations header -->
+      <div class="rec-hdr-row fi" style="animation-delay:.25s">
+        <div class="bulb-icon">💡</div>
+        <div class="rec-hdr-text">
+          <h3>คำแนะนำ เพื่อลดค่าไฟ</h3>
+          <p>Energy Saving Recommendations</p>
+        </div>
+      </div>
+ 
+      <!-- Swipeable Recommendation Cards -->
+      <div id="recCardsWrap" style="display:flex;flex-direction:column;gap:10px;"></div>
+ 
+    </div><!-- end adv-content -->
+ 
+    <!-- Nav — Energy/Advisor ACTIVE -->
+    <div class="bottom-nav">
+      <div class="nav-row">
+ 
+        <div class="nav-item" onclick="goTo('v-scanner')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="an1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <path d="M8 17V10H15" stroke="url(#an1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M33 10H40V17" stroke="url(#an1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M40 31V38H33" stroke="url(#an1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 38H8V31" stroke="url(#an1)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="nav-label">Scanner</span>
+        </div>
+ 
+        <div class="nav-item" onclick="goTo('v-dashboard')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="an2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <rect x="9" y="13" width="30" height="26" rx="4.5" stroke="url(#an2)" stroke-width="1.6"/>
+              <rect x="9" y="13" width="30" height="10" rx="4.5" fill="url(#an2)" opacity=".2"/>
+              <line x1="9" y1="23" x2="39" y2="23" stroke="url(#an2)" stroke-width="1.1" opacity=".4"/>
+              <path d="M17 9V15" stroke="url(#an2)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M31 9V15" stroke="url(#an2)" stroke-width="2.2" stroke-linecap="round"/>
+              <path d="M24 35C24 35 18.5 31.2 18.5 27.5C18.5 25.3 20.5 24 22.5 25C23.1 25.3 23.7 25.8 24 26.4C24.3 25.8 24.9 25.3 25.5 25C27.5 24 29.5 25.3 29.5 27.5C29.5 31.2 24 35 24 35Z" fill="url(#an2)" opacity=".75"/>
+            </svg>
+          </div>
+          <span class="nav-label">Dashboard</span>
+        </div>
+ 
+        <!-- Energy ACTIVE -->
+        <div class="nav-item" onclick="goTo('v-advisor')">
+          <div class="nav-icon active-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs>
+              <linearGradient id="an3w" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.95)"/><stop offset="100%" stop-color="rgba(255,255,255,0.70)"/></linearGradient>
+              <linearGradient id="an3fw" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.35)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>
+            </defs>
+              <line x1="11" y1="37" x2="38" y2="37" stroke="url(#an3w)" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>
+              <line x1="11" y1="37" x2="11" y2="12" stroke="url(#an3w)" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>
+              <path d="M13 30Q17 26 21 21Q25 16.5 29 19Q33 21.5 36 15L36 37L13 37Z" fill="url(#an3fw)"/>
+              <path d="M13 30Q17 26 21 21Q25 16.5 29 19Q33 21.5 36 15" stroke="url(#an3w)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="13" cy="30" r="2.2" fill="url(#an3w)"/>
+              <circle cx="21" cy="21" r="2.2" fill="url(#an3w)"/>
+              <circle cx="29" cy="19" r="2.2" fill="url(#an3w)"/>
+              <circle cx="36" cy="15" r="2.2" fill="url(#an3w)"/>
+              <rect x="14" y="32" width="3.5" height="4.5" rx="1" fill="url(#an3w)" opacity=".6"/>
+              <rect x="21.5" y="30" width="3.5" height="6.5" rx="1" fill="url(#an3w)" opacity=".6"/>
+              <rect x="29" y="28" width="3.5" height="8.5" rx="1" fill="url(#an3w)" opacity=".6"/>
+            </svg>
+          </div>
+          <span class="nav-label active-label">Energy</span>
+        </div>
+ 
+        <div class="nav-item" onclick="goTo('v-apps')">
+          <div class="nav-icon">
+            <svg viewBox="0 0 48 48" fill="none"><defs><linearGradient id="an4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5c0b0"/><stop offset="100%" stop-color="#d4685a"/></linearGradient></defs>
+              <rect x="10" y="10" width="12" height="12" rx="3.5" fill="url(#an4)" opacity=".9"/>
+              <rect x="26" y="10" width="12" height="12" rx="3.5" stroke="url(#an4)" stroke-width="1.6" fill="url(#an4)" fill-opacity=".18"/>
+              <rect x="10" y="26" width="12" height="12" rx="3.5" stroke="url(#an4)" stroke-width="1.6" fill="url(#an4)" fill-opacity=".18"/>
+              <rect x="26" y="26" width="12" height="12" rx="3.5" stroke="url(#an4)" stroke-width="1.6" fill="url(#an4)" fill-opacity=".32"/>
+            </svg>
+          </div>
+          <span class="nav-label">Apps</span>
+        </div>
+ 
+      </div>
+    </div>
+ 
+  </div><!-- end v-advisor -->
+ 
+</div>
+<script>
+// Petals
+(function(){
+  const wrap = document.getElementById('petals');
+  for(let i=0;i<12;i++){
+    const p=document.createElement('div'); p.className='petal';
+    const s=5+Math.random()*8;
+    p.style.cssText=`left:${Math.random()*100}vw;width:${s}px;height:${s}px;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*12}s;opacity:${0.15+Math.random()*0.35}`;
+    wrap.appendChild(p);
+  }
+})();
+ 
+function goTo(id) {
+  if (id === 'v-advisor') {
+    initTempChartIfNeeded();
+    setTimeout(buildRecCards, 200);
+  }
+}
+ 
+// Stub for settings
+function openSettings() {}
+function closeSettings() {}
+function promptOWMKey() {
+  const k = prompt('ใส่ OpenWeatherMap API Key:\n(สมัครฟรีที่ openweathermap.org)');
+  if (k && k.trim().length > 10) {
+    localStorage.setItem('owm_key', k.trim());
+    location.reload();
+  }
+}
+// ── Temperature Chart (Interactive + Real-time) ─────────
+const TEMP_DATA = {
+  times:  ['--','--','--','--','--','ตอนนี้'],
+  values: [30, 28, 32, 31, 35, 36]
+};
+ 
+// ── OpenWeatherMap Config ────────────────────────────────
+// 👉 ใส่ API Key ของคุณที่นี่ (สมัครฟรีที่ openweathermap.org)
+const OWM_KEY = localStorage.getItem('owm_key') || '';
+ 
+const OWM_CITIES = {
+  'กรุงเทพฯ':    { lat: 13.7563, lon: 100.5018 },
+  'เชียงใหม่':   { lat: 18.7883, lon: 98.9853  },
+  'ภูเก็ต':      { lat: 7.8804,  lon: 98.3923  },
+  'ขอนแก่น':     { lat: 16.4419, lon: 102.8360 },
+  'สุราษฎร์ธานี':{ lat: 9.1382,  lon: 99.3214  },
+  'พัทยา':       { lat: 12.9282, lon: 100.8773 },
+  'หาดใหญ่':     { lat: 7.0067,  lon: 100.4747 },
+};
+let owmCity    = 'กรุงเทพฯ';
+let owmLiveInt = null;
+ 
+let tempLiveVal      = 36;
+let tempAnimProgress = 0;
+let tempAnimRAF      = null;
+let tempHoverIdx     = -1;
+ 
+function getTempCanvas() { return document.getElementById('tempChart'); }
+ 
+// ── Show API Key input if not set ──────────────────────
+function checkOWMKey() {
+  if (!OWM_KEY) {
+    const subEl = document.getElementById('tempTimeRange');
+    if (subEl) subEl.innerHTML = `<span style="color:#c0443a;">⚠ กรุณาใส่ API Key · </span><a href="#" onclick="promptOWMKey()" style="color:var(--rose-dk);font-size:10px;">ตั้งค่า</a>`;
+    return false;
+  }
+  return true;
+}
+ 
+function promptOWMKey() {
+  const k = prompt('ใส่ OpenWeatherMap API Key ของคุณ:\n(สมัครฟรีที่ openweathermap.org)');
+  if (k && k.trim().length > 10) {
+    localStorage.setItem('owm_key', k.trim());
+    location.reload();
+  }
+}
+ 
+// ── Fetch current weather (real-time anchor point) ──────
+async function fetchOWMCurrent(cityKey) {
+  if (!OWM_KEY) return null;
+  const city = OWM_CITIES[cityKey];
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${city.lat}&lon=${city.lon}&appid=${OWM_KEY}&units=metric`
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const now = new Date();
+    return {
+      time:     now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0'),
+      temp:     Math.round(j.main.temp * 10) / 10,
+      feels:    Math.round(j.main.feels_like * 10) / 10,
+      humidity: j.main.humidity,
+      desc:     j.weather[0].description,
+    };
+  } catch(e) {
+    console.warn('OWM current failed:', e.message);
+    return null;
+  }
+}
+ 
+// ── Fetch hourly forecast (3h intervals × 5 slots) ───────
+async function fetchOWMHourly(cityKey) {
+  if (!OWM_KEY) return null;
+  const city = OWM_CITIES[cityKey];
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${city.lat}&lon=${city.lon}&appid=${OWM_KEY}&units=metric&cnt=5`
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    if (!j.list || j.list.length === 0) throw new Error('No data');
+    return j.list.map(s => {
+      const d = new Date(s.dt * 1000);
+      return {
+        time: d.getHours().toString().padStart(2,'0') + ':00',
+        temp: Math.round(s.main.temp * 10) / 10,
+      };
+    });
+  } catch(e) {
+    console.warn('OWM forecast failed:', e.message);
+    return null;
+  }
+}
+ 
+function updateTempUI(current) {
+  // Not used anymore - all data comes from forecast
+}
+ 
+async function refreshTempData() {
+  const liveLabel = document.getElementById('tempLiveLabel');
+  if (liveLabel) liveLabel.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#f59e0b;animation:tempBlink 0.5s ease-in-out infinite;"></div><span style="font-size:8px;color:#c2700a;font-weight:500;">กำลังโหลด...</span>`;
+ 
+  if (!checkOWMKey()) {
+    if (liveLabel) liveLabel.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#e07060;"></div><span style="font-size:8px;color:#c0443a;font-weight:500;">ไม่มี API Key</span>`;
+    return;
+  }
+ 
+  // Fetch both in parallel
+  const [current, forecast] = await Promise.all([
+    fetchOWMCurrent(owmCity),
+    fetchOWMHourly(owmCity),
+  ]);
+ 
+  if (!current && !forecast) {
+    if (liveLabel) liveLabel.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#e07060;"></div><span style="font-size:8px;color:#c0443a;font-weight:500;">เชื่อมต่อไม่ได้</span>`;
+    const subEl = document.getElementById('tempTimeRange');
+    if (subEl) subEl.innerHTML = `<span style="color:#c0443a;">⚠ API Key ไม่ถูกต้อง · </span><a href="#" onclick="promptOWMKey()" style="color:var(--rose-dk);">เปลี่ยน Key</a>`;
+    return;
+  }
+ 
+  // Build unified data:
+  // Slot 0 = current (real-time), Slots 1-5 = forecast (3h intervals)
+  // Smooth: interpolate between current and first forecast to avoid jump
+  const times  = [];
+  const values = [];
+ 
+  if (current) {
+    times.push(current.time);   // e.g. "15:32"
+    values.push(current.temp);
+  }
+ 
+  if (forecast) {
+    forecast.forEach((f, i) => {
+      // Skip first forecast slot if it's within 1h of current (avoid duplicate)
+      if (current && i === 0) {
+        // Blend: midpoint between current and first forecast
+        const blended = Math.round(((current.temp + f.temp) / 2) * 10) / 10;
+        const nowH = new Date().getHours();
+        const fH   = parseInt(f.time);
+        const midH = Math.round((nowH + fH) / 2);
+        times.push(midH.toString().padStart(2,'0') + ':00');
+        values.push(blended);
+      }
+      times.push(f.time);
+      values.push(f.temp);
+    });
+  }
+ 
+  // Apply smoothing: clamp swings > 3°C between adjacent points
+  for (let i = 1; i < values.length; i++) {
+    const diff = values[i] - values[i-1];
+    if (Math.abs(diff) > 3) {
+      values[i] = Math.round((values[i-1] + Math.sign(diff) * 3) * 10) / 10;
+    }
+  }
+ 
+  // Take first 6 points only
+  TEMP_DATA.times  = times.slice(0, 6);
+  TEMP_DATA.values = values.slice(0, 6);
+  tempLiveVal      = current ? current.temp : values[0];
+ 
+  // Update header — current temp (real-time, first slot)
+  const peakEl = document.getElementById('tempPeakVal');
+  if (peakEl && current) peakEl.textContent = current.temp.toFixed(2) + '°C';
+ 
+  const subEl = document.getElementById('tempTimeRange');
+  if (subEl && current) subEl.textContent = `📍 ${owmCity} · ${current.desc} · 💧${current.humidity}%`;
+ 
+  if (liveLabel) liveLabel.innerHTML = `<div style="width:6px;height:6px;border-radius:50%;background:#7dce82;animation:tempBlink 1.2s ease-in-out infinite;"></div><span style="font-size:8px;color:#5aaa60;font-weight:500;">LIVE · ${owmCity}</span>`;
+ 
+  // Re-animate with new data
+  if (tempAnimRAF) cancelAnimationFrame(tempAnimRAF);
+  tempAnimProgress = 0;
+  tempIntroAnimate();
+}
+ 
+function startTempLiveOld() {} // deprecated stub
+ 
+function buildCitySelector() {
+  const el = document.getElementById('tempCitySelect');
+  if (!el) return;
+  el.innerHTML = Object.keys(OWM_CITIES).map(c =>
+    `<option value="${c}" ${c===owmCity?'selected':''}>${c}</option>`
+  ).join('');
+  el.onchange = function() {
+    owmCity = this.value;
+    refreshTempData();
+  };
+}
+ 
+function drawTempChart(progress, hoverIdx) {
+  const canvas = getTempCanvas();
+  if (!canvas) return;
+  const wrap = document.getElementById('tempChartWrap');
+  if (!wrap || wrap.clientWidth === 0) return;
+ 
+  const W = wrap.clientWidth;
+  const H = 128;
+  const dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== W * dpr) {
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+ 
+  const data   = [...TEMP_DATA.values];
+  const n      = data.length;
+  const pad    = { l:28, r:12, t:18, b:22 };
+  const cw     = W - pad.l - pad.r;
+  const ch     = H - pad.t - pad.b;
+ 
+  // Dynamic scale — pad ±2° around actual min/max, rounded to nearest 5
+  const dataMin = Math.min(...data);
+  const dataMax = Math.max(...data);
+  const minV = Math.floor((dataMin - 2) / 5) * 5;
+  const maxV = Math.ceil((dataMax + 2) / 5) * 5;
+  const range  = maxV - minV || 1;
+ 
+  const px = i => pad.l + (i / (n-1)) * cw;
+  const py = v => pad.t + ch - ((v - minV) / range) * ch;
+ 
+  // Number of points to draw based on animation progress
+  const drawN = Math.max(1, Math.round(progress * (n - 1) * 10) / 10);
+ 
+  // Grid lines — 4 evenly spaced labels
+  const step = Math.round((maxV - minV) / 4 / 5) * 5 || 5;
+  for (let v = minV; v <= maxV; v += step) {
+    const y = py(v);
+    ctx.strokeStyle = 'rgba(180,100,80,0.07)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(156,123,116,0.65)';
+    ctx.font = '8px DM Sans, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(v + '°', pad.l - 3, y + 3);
+  }
+ 
+  // Bars (animated height)
+  const barW = Math.min(28, cw / n * 0.55);
+  data.forEach((v, i) => {
+    if (i > drawN) return;
+    const barProgress = Math.min(1, drawN - i + 1);
+    const barH = ((v - minV) / range) * ch * Math.max(0, barProgress);
+    const x = px(i) - barW / 2;
+    const y = py(v);
+    const isHov = i === hoverIdx;
+    const isLive = i === n - 1;
+ 
+    // Bar gradient
+    const bg = ctx.createLinearGradient(0, y, 0, py(minV));
+    bg.addColorStop(0, isHov ? 'rgba(251,146,60,1)' : isLive ? 'rgba(224,112,96,0.95)' : 'rgba(251,146,60,0.82)');
+    bg.addColorStop(1, 'rgba(253,186,116,0.3)');
+    ctx.fillStyle = bg;
+ 
+    // Rounded rect
+    const actualY = py(minV) - barH;
+    const r = 5;
+    ctx.beginPath();
+    ctx.moveTo(x + r, actualY);
+    ctx.lineTo(x + barW - r, actualY);
+    ctx.quadraticCurveTo(x + barW, actualY, x + barW, actualY + r);
+    ctx.lineTo(x + barW, py(minV));
+    ctx.lineTo(x, py(minV));
+    ctx.lineTo(x, actualY + r);
+    ctx.quadraticCurveTo(x, actualY, x + r, actualY);
+    ctx.closePath();
+    ctx.fill();
+ 
+    // Hover glow
+    if (isHov) {
+      ctx.shadowColor = 'rgba(251,146,60,0.4)';
+      ctx.shadowBlur  = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  });
+ 
+  // Line + area (animated draw)
+  const linePoints = data.map((v,i) => ({ x: px(i), y: py(v) }));
+  const partialN = Math.min(n, Math.floor(drawN) + 1);
+  const frac     = drawN % 1;
+ 
+  // Area fill
+  if (partialN >= 2) {
+    const areaGrad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
+    areaGrad.addColorStop(0, 'rgba(251,191,36,0.22)');
+    areaGrad.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.beginPath();
+    ctx.moveTo(linePoints[0].x, linePoints[0].y);
+    for (let i = 1; i < partialN; i++) {
+      const p = i < partialN - 1 ? linePoints[i] : {
+        x: linePoints[i-1].x + (linePoints[Math.min(i, n-1)].x - linePoints[i-1].x) * (i === partialN-1 ? frac || 1 : 1),
+        y: linePoints[i-1].y + (linePoints[Math.min(i, n-1)].y - linePoints[i-1].y) * (i === partialN-1 ? frac || 1 : 1)
+      };
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.lineTo(linePoints[Math.min(partialN-1, n-1)].x, py(minV));
+    ctx.lineTo(linePoints[0].x, py(minV));
+    ctx.closePath();
+    ctx.fillStyle = areaGrad;
+    ctx.fill();
+  }
+ 
+  // Line stroke
+  if (partialN >= 2) {
+    const lineGrad = ctx.createLinearGradient(pad.l, 0, W - pad.r, 0);
+    lineGrad.addColorStop(0, '#fbbf24');
+    lineGrad.addColorStop(1, '#f59e0b');
+    ctx.beginPath();
+    ctx.moveTo(linePoints[0].x, linePoints[0].y);
+    for (let i = 1; i < partialN; i++) {
+      const endX = i < partialN - 1 ? linePoints[i].x : linePoints[i-1].x + (linePoints[Math.min(i,n-1)].x - linePoints[i-1].x) * (frac || 1);
+      const endY = i < partialN - 1 ? linePoints[i].y : linePoints[i-1].y + (linePoints[Math.min(i,n-1)].y - linePoints[i-1].y) * (frac || 1);
+      ctx.lineTo(endX, endY);
+    }
+    ctx.strokeStyle = lineGrad;
+    ctx.lineWidth   = 2.2;
+    ctx.lineJoin    = 'round';
+    ctx.lineCap     = 'round';
+    ctx.stroke();
+  }
+ 
+  // Dots + labels
+  data.forEach((v, i) => {
+    if (i > drawN) return;
+    const x = px(i), y = py(v);
+    const isHov  = i === hoverIdx;
+    const isPeak = v === Math.max(...data);
+    const isLive = i === n - 1;
+ 
+    // Glow ring on hover
+    if (isHov) {
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI*2);
+      ctx.fillStyle = isPeak ? 'rgba(224,112,96,0.2)' : 'rgba(251,146,60,0.2)';
+      ctx.fill();
+    }
+    // Dot
+    ctx.beginPath(); ctx.arc(x, y, isHov ? 5.5 : isPeak ? 5 : 3.8, 0, Math.PI*2);
+    ctx.fillStyle = isPeak ? '#e07060' : isLive ? '#fb923c' : '#f59e0b';
+    ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 1.8;
+    ctx.stroke();
+ 
+    // Temp label above
+    if (!isHov) {
+      ctx.font = `${isPeak ? 'bold ' : ''}8.5px DM Sans, sans-serif`;
+      ctx.fillStyle = isPeak ? '#e07060' : '#c2700a';
+      ctx.textAlign = 'center';
+      ctx.fillText(v + '°' + (isPeak ? '🔥' : ''), x, y - 7);
+    }
+  });
+ 
+  // X-axis labels
+  ctx.font = '8px DM Sans, sans-serif';
+  ctx.fillStyle = 'rgba(156,123,116,0.7)';
+  ctx.textAlign = 'center';
+  TEMP_DATA.times.forEach((t, i) => {
+    ctx.fillText(t, px(i), H - 4);
+  });
+}
+ 
+function tempIntroAnimate() {
+  tempAnimProgress += 0.04;
+  if (tempAnimProgress >= 1) {
+    tempAnimProgress = 1;
+    drawTempChart(1, tempHoverIdx);
+    startTempLive();
+    return;
+  }
+  const eased = 1 - Math.pow(1 - tempAnimProgress, 3);
+  drawTempChart(eased, tempHoverIdx);
+  tempAnimRAF = requestAnimationFrame(tempIntroAnimate);
+}
+ 
+// ── Real-time smooth fluctuation ────────────────────────
+// Each tick: ALL points drift ±0.02°C max toward a slow-moving target
+// Gives gentle wave motion — no random spike
+let tempRealTimeRAF  = null;
+let tempTargets      = [];   // target value per point (drifts slowly)
+let tempTargetTimer  = 0;    // countdown to next target shift
+const TICK_MS        = 1000 / 30; // ~30fps smooth
+const DRIFT_PER_TICK = 0.02;      // max °C change per tick toward target
+const TARGET_RANGE   = 0.4;       // targets drift ±0.4°C from base values
+let tempBaseValues   = [];        // snapshot of API values as baseline
+let tempLastTick     = 0;
+ 
+function startTempLive() {
+  if (tempRealTimeRAF) cancelAnimationFrame(tempRealTimeRAF);
+ 
+  // Freeze all points except the last one
+  tempBaseValues = [...TEMP_DATA.values];
+  let liveTarget = tempBaseValues[tempBaseValues.length - 1];
+  let liveVal    = liveTarget;
+  let targetTimer = 0;
+  tempLastTick = 0;
+ 
+  function tick(ts) {
+    if (!tempLastTick) tempLastTick = ts;
+    const dt = ts - tempLastTick;
+    tempLastTick = ts;
+ 
+    targetTimer -= dt;
+    if (targetTimer <= 0) {
+      // Drift target ±0.4°C from base — gentle realistic fluctuation
+      const base  = tempBaseValues[tempBaseValues.length - 1];
+      liveTarget  = Math.round((base + (Math.random() * 0.8 - 0.4)) * 100) / 100;
+      targetTimer = 3000 + Math.random() * 4000; // every 3–7s pick new target
+    }
+ 
+    // Move liveVal toward target by max ±0.02°C per tick
+    const diff = liveTarget - liveVal;
+    if (Math.abs(diff) > 0.001) {
+      liveVal = Math.round((liveVal + Math.sign(diff) * Math.min(DRIFT_PER_TICK, Math.abs(diff))) * 100) / 100;
+ 
+      // Update ONLY last data point
+      TEMP_DATA.values[TEMP_DATA.values.length - 1] = liveVal;
+ 
+      drawTempChart(1, tempHoverIdx);
+ 
+      // Update header display
+      const peakEl = document.getElementById('tempPeakVal');
+      if (peakEl) peakEl.textContent = liveVal.toFixed(2) + '°C';
+    }
+ 
+    tempRealTimeRAF = requestAnimationFrame(tick);
+  }
+ 
+  tempRealTimeRAF = requestAnimationFrame(tick);
+ 
+  // Re-fetch from API every 5 min to update baseline
+  if (owmLiveInt) clearInterval(owmLiveInt);
+  owmLiveInt = setInterval(refreshTempData, 5 * 60 * 1000);
+}
+ 
+function initTempChart() {
+  const canvas = getTempCanvas();
+  if (!canvas) return;
+ 
+  // Hover / touch events
+  const showTooltip = (clientX, clientY) => {
+    const rect  = canvas.getBoundingClientRect();
+    const x     = clientX - rect.left;
+    const n     = TEMP_DATA.values.length;
+    const W     = rect.width;
+    const padL  = 28, padR = 12;
+    const cw    = W - padL - padR;
+    // Find nearest point
+    let closest = 0, minD = Infinity;
+    for (let i = 0; i < n; i++) {
+      const px = padL + (i / (n-1)) * cw;
+      const d  = Math.abs(x - px);
+      if (d < minD) { minD = d; closest = i; }
+    }
+    if (minD > cw / n) { hideTooltip(); return; }
+    tempHoverIdx = closest;
+    drawTempChart(1, tempHoverIdx);
+ 
+    const tip = document.getElementById('tempTooltip');
+    const vals = TEMP_DATA.values;
+    const dMin = Math.min(...vals), dMax = Math.max(...vals);
+    const mV = Math.floor((dMin-3)/5)*5, xV = Math.ceil((dMax+3)/5)*5;
+    const v    = vals[closest];
+    const t    = TEMP_DATA.times[closest];
+    tip.textContent = `🌡 ${v}°C · ${t}`;
+    const px2  = padL + (closest / (n-1)) * cw;
+    const py2  = 18 + (128-40) - ((v - mV) / (xV - mV)) * (128-40);
+    tip.style.left    = (px2 / W * 100) + '%';
+    tip.style.top     = Math.max(10, py2 - 14) + 'px';
+    tip.style.display = 'block';
+  };
+  const hideTooltip = () => {
+    tempHoverIdx = -1;
+    drawTempChart(1, -1);
+    const tip = document.getElementById('tempTooltip');
+    if (tip) tip.style.display = 'none';
+  };
+ 
+  canvas.addEventListener('mousemove',  e => showTooltip(e.clientX, e.clientY));
+  canvas.addEventListener('mouseleave', () => hideTooltip());
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); showTooltip(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); showTooltip(e.touches[0].clientX, e.touches[0].clientY); }, {passive:false});
+  canvas.addEventListener('touchend',   () => setTimeout(hideTooltip, 1200));
+ 
+  // Start intro animation
+  if (tempAnimRAF) cancelAnimationFrame(tempAnimRAF);
+  tempAnimProgress = 0;
+  tempIntroAnimate();
+}
+ 
+// Trigger when entering advisor view
+function initTempChartIfNeeded() {
+  setTimeout(() => {
+    buildCitySelector();
+    drawTempChart(0, -1);
+    initTempChart();
+  }, 80);
+}
+ 
+// ── Recommendation Cards (Stagger + Swipe) ──────────────
+const REC_CARDS = [
+  { id:'r1', ico:'ac',  emoji:'❄️', title:'ปิดแอร์ห้องนอน',   sub:'Turn off Bedroom AC · 11:00–14:00', badge:'+225 B', type:'save' },
+  { id:'r2', ico:'tv',  emoji:'📺', title:'เปิดโทรทัศน์',      sub:'Turn on TV · 11:00–14:00',          badge:'−156 B', type:'cost' },
+  { id:'r3', ico:'light',emoji:'💡',title:'ปิดไฟห้องว่าง',    sub:'Turn off unused lights · ทั้งวัน',  badge:'+48 B',  type:'save' },
+  { id:'r4', ico:'fan', emoji:'🌀', title:'เปลี่ยนแอร์เป็นพัดลม',sub:'Use fan instead · 13:00–16:00',  badge:'+310 B', type:'save' },
+];
+const recState = {}; // id → 'done' | 'dismissed' | null
+ 
+function buildRecCards() {
+  const wrap = document.getElementById('recCardsWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+ 
+  REC_CARDS.forEach((card, idx) => {
+    if (recState[card.id] === 'dismissed') return;
+ 
+    const isDone = recState[card.id] === 'done';
+ 
+    const outer = document.createElement('div');
+    outer.className = 'rec-swipe-wrap' + (isDone ? ' completed' : '');
+    outer.id = 'rw-' + card.id;
+    outer.style.transitionDelay = (idx * 0.08) + 's';
+ 
+    outer.innerHTML = `
+      <div class="rec-action-bg done">✓ ทำแล้ว!</div>
+      <div class="rec-action-bg dismiss">✕ ข้าม</div>
+      <div class="rec-card-front" id="rf-${card.id}">
+        ${isDone ? `<div class="rec-done-badge">✓ ทำแล้ว</div>` : ''}
+        <div class="sug-ico ${card.ico}"><span>${card.emoji}</span></div>
+        <div class="sug-bdy">
+          <div class="sug-ttl">${card.title}</div>
+          <div class="sug-tme">${card.sub}</div>
+        </div>
+        <div class="sug-bdg ${card.type}">${card.badge}</div>
+      </div>`;
+ 
+    wrap.appendChild(outer);
+ 
+    // Stagger entrance
+    requestAnimationFrame(() => {
+      setTimeout(() => outer.classList.add('visible'), idx * 90 + 30);
+    });
+ 
+    // Swipe hint on first card only
+    if (idx === 0 && !isDone) {
+      setTimeout(() => {
+        const front = document.getElementById('rf-' + card.id);
+        if (front) front.classList.add('hint');
+      }, 800 + idx * 90);
+    }
+ 
+    initSwipe(card.id);
+  });
+}
+ 
+function initSwipe(cardId) {
+  const front = document.getElementById('rf-' + cardId);
+  const outer = document.getElementById('rw-' + cardId);
+  if (!front || !outer) return;
+ 
+  let startX = 0, currentX = 0, dragging = false;
+  const THRESHOLD = 80; // px to trigger action
+ 
+  function onStart(x) {
+    startX   = x;
+    currentX = 0;
+    dragging = true;
+    front.classList.add('swiping');
+    front.classList.remove('snap-back', 'hint');
+  }
+ 
+  function onMove(x) {
+    if (!dragging) return;
+    currentX = x - startX;
+ 
+    // Reveal correct action bg
+    const doneBg    = outer.querySelector('.rec-action-bg.done');
+    const dismissBg = outer.querySelector('.rec-action-bg.dismiss');
+    if (currentX > 0) {
+      doneBg.style.opacity    = Math.min(1, currentX / THRESHOLD);
+      dismissBg.style.opacity = 0;
+    } else {
+      dismissBg.style.opacity = Math.min(1, -currentX / THRESHOLD);
+      doneBg.style.opacity    = 0;
+    }
+ 
+    // Rubber-band effect beyond threshold
+    const resistance = Math.abs(currentX) > THRESHOLD ? 0.3 : 1;
+    const tx = currentX > THRESHOLD
+      ? THRESHOLD + (currentX - THRESHOLD) * resistance
+      : currentX < -THRESHOLD
+        ? -THRESHOLD + (currentX + THRESHOLD) * resistance
+        : currentX;
+ 
+    front.style.transform = `translateX(${tx}px)`;
+  }
+ 
+  function onEnd() {
+    if (!dragging) return;
+    dragging = false;
+    front.classList.remove('swiping');
+ 
+    const doneBg    = outer.querySelector('.rec-action-bg.done');
+    const dismissBg = outer.querySelector('.rec-action-bg.dismiss');
+    doneBg.style.opacity = 0;
+    dismissBg.style.opacity = 0;
+ 
+    if (currentX > THRESHOLD) {
+      // Swipe right → Done
+      front.classList.add('snap-out');
+      front.style.transform = `translateX(120%)`;
+      setTimeout(() => {
+        recState[cardId] = 'done';
+        buildRecCards();
+        showRecToast('✓ ทำแล้ว! บันทึกไว้แล้ว', '#34d399');
+      }, 280);
+    } else if (currentX < -THRESHOLD) {
+      // Swipe left → Dismiss
+      front.classList.add('snap-out');
+      front.style.transform = `translateX(-120%)`;
+      setTimeout(() => {
+        recState[cardId] = 'dismissed';
+        buildRecCards();
+        showRecToast('ข้ามคำแนะนำนี้แล้ว', '#f87171');
+      }, 280);
+    } else {
+      // Snap back
+      front.classList.add('snap-back');
+      front.style.transform = 'translateX(0)';
+    }
+    currentX = 0;
+  }
+ 
+  // Touch
+  front.addEventListener('touchstart', e => onStart(e.touches[0].clientX), {passive:true});
+  front.addEventListener('touchmove',  e => onMove(e.touches[0].clientX),  {passive:true});
+  front.addEventListener('touchend',   () => onEnd());
+ 
+  // Mouse
+  front.addEventListener('mousedown',  e => { onStart(e.clientX); e.preventDefault(); });
+  window.addEventListener('mousemove', e => { if (dragging) onMove(e.clientX); });
+  window.addEventListener('mouseup',   () => { if (dragging) onEnd(); });
+}
+ 
+function showRecToast(msg, color) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `
+    position:absolute;bottom:110px;left:50%;transform:translateX(-50%);
+    background:${color};color:white;font-size:12px;font-weight:600;
+    padding:8px 18px;border-radius:20px;z-index:300;
+    box-shadow:0 4px 16px rgba(0,0,0,0.2);white-space:nowrap;
+    animation:recToastAnim 2.2s cubic-bezier(0.16,1,0.3,1) forwards;`;
+  const phone = document.querySelector('.phone');
+  if (phone) phone.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+ 
+// Add toast keyframe
+const recStyle = document.createElement('style');
+recStyle.textContent = `@keyframes recToastAnim {
+  0%   { opacity:0; transform:translateX(-50%) translateY(10px); }
+  15%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  75%  { opacity:1; }
+  100% { opacity:0; transform:translateX(-50%) translateY(-6px); }
+}`;
+document.head.appendChild(recStyle);
+ 
+// ── Settings Panel ──────────────────────────────────────
+ 
+// Auto-init
+setTimeout(() => { buildCitySelector(); initTempChartIfNeeded(); setTimeout(buildRecCards, 300); }, 100);
+</script>
+</body>
+</html>
